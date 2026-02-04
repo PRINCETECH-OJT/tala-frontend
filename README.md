@@ -24,17 +24,6 @@
     pnpm install
     ```
 
-3.  **Environment Setup:**
-    Create a `.env` file in the root directory to configure your API connections.
-
-    ```bash
-    # Create .env file (Mac/Linux)
-    cp .env.example .env
-
-    # Or manually create a .env file and add:
-    VITE_API_BASE_URL=http://localhost:8000/api
-    ```
-
 ### Running the App
 
 Start the development server with hot-reload:
