@@ -1,7 +1,18 @@
-<script lang="ts"></script>
+<script setup lang="ts">
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import AppSidebar from "@/components/AppSidebar.vue";
+</script>
 
 <template>
-  <div>
-    <h1>This is an dashboard</h1>
-  </div>
+  <SidebarProvider>
+    <AppSidebar />
+
+    <main class="w-full">
+      <SidebarTrigger />
+
+      <div class="flex min-h-screen justify-center items-center">
+        <h1>This is a dashboard</h1>
+      </div>
+    </main>
+  </SidebarProvider>
 </template>
