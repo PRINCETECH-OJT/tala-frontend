@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import type { SidebarProps } from "@/components/ui/sidebar";
-import SearchForm from "@/components/SearchForm.vue";
-import VersionSwitcher from "@/components/VersionSwitcher.vue";
 import {
   Sidebar,
   SidebarContent,
@@ -107,13 +105,26 @@ const data: {
 
 <template>
   <Sidebar v-bind="props">
-    <SidebarHeader>
-      <VersionSwitcher
-        :versions="data.versions"
-        :default-version="data.versions[0] ?? ''"
-      />
-      <SearchForm />
+    <SidebarHeader class="flex flex-col items-center justify-center py-10">
+      <div
+        class="relative flex h-24 w-24 shrink-0 overflow-hidden rounded-full border-4 border-sidebar-primary"
+      >
+        <img
+          src="https://github.com/shadcn.png"
+          alt="Admin Profile"
+          class="aspect-square h-full w-full object-cover"
+        />
+      </div>
+
+      <div class="mt-4 flex flex-col items-center gap-1">
+        <span
+          class="text-sm font-bold uppercase tracking-[0.2em] text-sidebar-foreground"
+        >
+          Admin
+        </span>
+      </div>
     </SidebarHeader>
+
     <SidebarContent>
       <SidebarMenu>
         <Collapsible
@@ -127,7 +138,7 @@ const data: {
             <CollapsibleTrigger as-child>
               <SidebarMenuButton :tooltip="item.title">
                 <component :is="item.icon" />
-                <span>{{ item.title }}</span>
+                <span class="font-semibold">{{ item.title }}</span>
 
                 <ChevronRight
                   class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
@@ -144,10 +155,13 @@ const data: {
                   <SidebarMenuSubButton
                     as-child
                     :is-active="childItem.isActive ?? false"
+                    class="text-white hover:text-black data-[active=true]:text-black transition-colors"
                   >
-                    <a :href="childItem.url">
-                      <component :is="childItem.icon" />
-                      <span>{{ childItem.title }}</span>
+                    <a
+                      :href="childItem.url"
+                      class="group flex items-center gap-2"
+                    >
+                      <span class="ml-2">{{ childItem.title }}</span>
                     </a>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
