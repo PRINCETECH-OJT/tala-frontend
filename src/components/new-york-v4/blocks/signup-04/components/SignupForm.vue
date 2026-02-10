@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from "vue";
 import { cn } from "@/lib/utils";
+import { ref, reactive } from "vue";
 import { Button } from "@/components/ui/button";
+import authService from "@/services/authService";
+import type { RegisterForm } from "@/types";
+import { useRouter } from "vue-router";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Field,
@@ -15,13 +19,45 @@ import { Input } from "@/components/ui/input";
 const props = defineProps<{
   class?: HTMLAttributes["class"];
 }>();
+
+const router = useRouter();
+const isLoading = ref(false);
+const errors = ref<Record<string, string[]>>({});
+
+const form = reactive<RegisterForm>({
+  name: "",
+  email: "",
+  password: "",
+  password_confirmation: "",
+  phone: "",
+});
+
+const handleRegister = async (e: Event) => {
+  e.preventDefault();
+  isLoading.value = true;
+  errors.value = {};
+
+  try {
+    await authService.register(form);
+    router.push("/dashboard");
+  } catch (error: any) {
+    if (error.response?.status === 422) {
+      errors.value = error.response.data.errors;
+    } else {
+      console.error(error);
+      alert("Registration failed. Please try again.");
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
 </script>
 
 <template>
   <div :class="cn('flex flex-col gap-6', props.class)">
     <Card class="overflow-hidden p-0">
       <CardContent class="grid p-0 md:grid-cols-2">
-        <form class="p-6 md:p-8">
+        <form class="p-6 md:p-8" @submit="handleRegister">
           <FieldGroup>
             <div class="flex flex-col items-center gap-2 text-center">
               <h1 class="text-2xl font-bold">Create your account</h1>
@@ -30,44 +66,90 @@ const props = defineProps<{
               </p>
             </div>
             <Field>
+              <FieldLabel for="name"> Full Name </FieldLabel>
+              <Input
+                id="name"
+                v-model="form.name"
+                type="text"
+                placeholder="John Doe"
+                required
+              />
+              <div v-if="errors.name" class="text-red-500 text-sm mt-1">
+                <p v-for="error in errors.name" :key="error">{{ error }}</p>
+              </div>
+            </Field>
+            <Field>
               <FieldLabel for="email"> Email </FieldLabel>
               <Input
                 id="email"
+                v-model="form.email"
                 type="email"
                 placeholder="m@example.com"
                 required
               />
-              <FieldDescription>
-                We'll use this to contact you. We will not share your email with
-                anyone else.
-              </FieldDescription>
+              <div v-if="errors.email" class="text-red-500 text-sm mt-1">
+                <p v-for="error in errors.email" :key="error">{{ error }}</p>
+              </div>
             </Field>
-            <Field>
-              <Field class="grid grid-cols-2 gap-4">
-                <Field>
-                  <FieldLabel for="password"> Password </FieldLabel>
-                  <Input id="password" type="password" required />
-                </Field>
-                <Field>
-                  <FieldLabel for="confirm-password">
-                    Confirm Password
-                  </FieldLabel>
-                  <Input id="confirm-password" type="password" required />
-                </Field>
+            <div class="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel for="password"> Password </FieldLabel>
+                <Input
+                  id="password"
+                  v-model="form.password"
+                  type="password"
+                  required
+                />
+                <div v-if="errors.password" class="text-red-500 text-sm mt-1">
+                  <p v-for="error in errors.password" :key="error">
+                    {{ error }}
+                  </p>
+                </div>
               </Field>
-              <FieldDescription>
-                Must be at least 8 characters long.
-              </FieldDescription>
+              <Field>
+                <FieldLabel for="password_confirmation">
+                  Confirm Password
+                </FieldLabel>
+                <Input
+                  id="password_confirmation"
+                  v-model="form.password_confirmation"
+                  type="password"
+                  required
+                />
+                <div
+                  v-if="errors.password_confirmation"
+                  class="text-red-500 text-sm mt-1"
+                >
+                  <p v-for="error in errors.password_confirmation" :key="error">
+                    {{ error }}
+                  </p>
+                </div>
+              </Field>
+            </div>
+            <Field>
+              <FieldLabel for="phone"> Phone Number </FieldLabel>
+              <Input
+                id="phone"
+                v-model="form.phone"
+                type="tel"
+                required
+                placeholder="+63"
+              />
+              <div v-if="errors.phone" class="text-red-500 text-sm mt-1">
+                <p v-for="error in errors.phone" :key="error">{{ error }}</p>
+              </div>
             </Field>
             <Field>
-              <Button type="submit"> Create Account </Button>
+              <Button type="submit" :disabled="isLoading">
+                {{ isLoading ? "Creating Account..." : "Create Account" }}
+              </Button>
             </Field>
             <FieldSeparator
               class="*:data-[slot=field-separator-content]:bg-card"
             >
               Or continue with
             </FieldSeparator>
-            <Field class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-3 gap-4">
               <Button variant="outline" type="button">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                   <path
@@ -95,10 +177,10 @@ const props = defineProps<{
                 </svg>
                 <span class="sr-only">Sign up with Meta</span>
               </Button>
-            </Field>
+            </div>
             <FieldDescription class="text-center">
               Already have an account?
-              <RouterLink to="/login">Sign in</RouterLink>
+              <RouterLink to="/auth/login">Sign in</RouterLink>
             </FieldDescription>
           </FieldGroup>
         </form>

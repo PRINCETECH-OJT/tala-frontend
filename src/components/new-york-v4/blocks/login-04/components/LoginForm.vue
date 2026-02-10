@@ -158,7 +158,9 @@ const props = defineProps<{
 
             <FieldDescription class="text-center">
               Don't have an account?
-              <RouterLink to="/register" class="underline hover:text-primary"
+              <RouterLink
+                to="/auth/register"
+                class="underline hover:text-primary"
                 >Sign up</RouterLink
               >
             </FieldDescription>

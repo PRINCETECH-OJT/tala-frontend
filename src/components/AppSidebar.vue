@@ -142,7 +142,7 @@ const data: { navMain: NavMainItem[] } = {
       class="flex flex-col items-center justify-center py-6 transition-all group-data-[collapsible=icon]:py-2"
     >
       <div
-        class="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground shadow-sm group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:border-2"
+        class="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground shadow-sm group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:border-2"
       >
         <span
           v-if="!authStore.user?.avatar"
