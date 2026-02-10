@@ -33,7 +33,7 @@ const handleLogin = async () => {
       password: password.value,
     });
 
-    router.push({ name: "Dashboard" });
+    router.push({ name: "DashboardOverview" });
   } catch (error: any) {
     if (
       error.response &&

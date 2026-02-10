@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
 import type { SidebarProps } from "@/components/ui/sidebar";
 import {
   Sidebar,
@@ -11,6 +14,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 
 import {
@@ -33,6 +37,7 @@ import {
   Settings,
   ChevronRight,
   ReceiptCent,
+  LogOut,
 } from "lucide-vue-next";
 
 interface NavItem {
@@ -51,52 +56,80 @@ interface NavMainItem {
 }
 
 const props = defineProps<SidebarProps>();
+const router = useRouter();
+const authStore = useAuthStore();
+const userName = computed(() => authStore.user?.name || "Guest User");
 
-const data: {
-  versions: string[];
-  navMain: NavMainItem[];
-} = {
-  versions: ["1.0.0", "1.1.0-beta"],
+const userRole = computed(() => {
+  const roles = authStore.user?.roles;
+
+  if (roles && roles.length > 0) {
+    const role = roles[0];
+    if (role) {
+      return role.charAt(0).toUpperCase() + role.slice(1);
+    }
+  }
+
+  return "User";
+});
+
+const userInitials = computed(() => {
+  const name = authStore.user?.name || "";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+});
+
+// --- Actions ---
+const handleLogout = async () => {
+  await authStore.logout();
+  router.push("/auth/login");
+};
+
+// --- Menu Data ---
+const data: { navMain: NavMainItem[] } = {
   navMain: [
     {
       title: "Overview",
       icon: LayoutDashboard,
       isActive: true,
       items: [
-        {
-          title: "Dashboard",
-          url: "/dashboard",
-          icon: PieChart,
-          isActive: true,
-        },
-        { title: "Reports & Analytics", url: "/reports", icon: FileText },
+        { title: "Dashboard", url: "/dashboard", icon: PieChart },
+        { title: "Reports", url: "/dashboard/reports", icon: FileText },
       ],
     },
     {
       title: "Financials",
       icon: Landmark,
       items: [
-        { title: "General Ledger", url: "/ledger", icon: BookOpen },
-        { title: "Banking & Cash", url: "/banking", icon: CreditCard },
+        { title: "General Ledger", url: "/dashboard/ledger", icon: BookOpen },
+        { title: "Banking", url: "/dashboard/banking", icon: CreditCard },
       ],
     },
     {
       title: "Operations",
       icon: Briefcase,
       items: [
-        { title: "Sales (AR)", url: "/sales", icon: CreditCard },
-        { title: "Purchases (AP)", url: "/purchases", icon: Receipt },
-        { title: "Invoices", url: "/invoices", icon: FileText },
-        { title: "Bills", url: "/bills", icon: ReceiptCent },
+        { title: "Sales (AR)", url: "/dashboard/sales", icon: CreditCard },
+        { title: "Purchases (AP)", url: "/dashboard/purchases", icon: Receipt },
+        { title: "Invoices", url: "/dashboard/invoices", icon: FileText },
+        { title: "Bills", url: "/dashboard/bills", icon: ReceiptCent },
       ],
     },
     {
       title: "Administration",
       icon: ShieldCheck,
       items: [
-        { title: "User Management", url: "/users", icon: Users },
-        { title: "Roles & Permissions", url: "/roles", icon: ShieldCheck },
-        { title: "System Settings", url: "/settings", icon: Settings },
+        { title: "User Management", url: "/dashboard/users", icon: Users },
+        {
+          title: "Roles & Permissions",
+          url: "/dashboard/roles",
+          icon: ShieldCheck,
+        },
+        { title: "Settings", url: "/dashboard/settings", icon: Settings },
       ],
     },
   ],
@@ -104,23 +137,37 @@ const data: {
 </script>
 
 <template>
-  <Sidebar v-bind="props">
-    <SidebarHeader class="flex flex-col items-center justify-center py-10">
+  <Sidebar v-bind="props" collapsible="icon">
+    <SidebarHeader
+      class="flex flex-col items-center justify-center py-6 transition-all group-data-[collapsible=icon]:py-2"
+    >
       <div
-        class="relative flex h-24 w-24 shrink-0 overflow-hidden rounded-full border-4 border-sidebar-primary"
+        class="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground shadow-sm group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:border-2"
       >
+        <span
+          v-if="!authStore.user?.avatar"
+          class="text-xl font-bold group-data-[collapsible=icon]:text-xs"
+        >
+          {{ userInitials }}
+        </span>
         <img
-          src="https://github.com/shadcn.png"
-          alt="Admin Profile"
+          v-else
+          :src="authStore.user?.avatar"
+          alt="Profile"
           class="aspect-square h-full w-full object-cover"
         />
       </div>
 
-      <div class="mt-4 flex flex-col items-center gap-1">
+      <div
+        class="mt-3 flex flex-col items-center gap-1 group-data-[collapsible=icon]:hidden"
+      >
+        <span class="text-sm font-semibold text-sidebar-foreground">
+          {{ userName }}
+        </span>
         <span
-          class="text-sm font-bold uppercase tracking-[0.2em] text-sidebar-foreground"
+          class="text-xs font-semibold uppercase tracking-widest text-secondary"
         >
-          Admin
+          {{ userRole }}
         </span>
       </div>
     </SidebarHeader>
@@ -138,8 +185,7 @@ const data: {
             <CollapsibleTrigger as-child>
               <SidebarMenuButton :tooltip="item.title">
                 <component :is="item.icon" />
-                <span class="font-semibold">{{ item.title }}</span>
-
+                <span class="font-medium">{{ item.title }}</span>
                 <ChevronRight
                   class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
                 />
@@ -152,17 +198,13 @@ const data: {
                   v-for="childItem in item.items"
                   :key="childItem.title"
                 >
-                  <SidebarMenuSubButton
-                    as-child
-                    :is-active="childItem.isActive ?? false"
-                    class="text-white hover:text-black data-[active=true]:text-black transition-colors"
-                  >
-                    <a
-                      :href="childItem.url"
-                      class="group flex items-center gap-2"
+                  <SidebarMenuSubButton as-child>
+                    <RouterLink
+                      :to="childItem.url"
+                      active-class="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
-                      <span class="ml-2">{{ childItem.title }}</span>
-                    </a>
+                      <span>{{ childItem.title }}</span>
+                    </RouterLink>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
@@ -171,6 +213,29 @@ const data: {
         </Collapsible>
       </SidebarMenu>
     </SidebarContent>
+
+    <SidebarFooter class="p-2">
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            as-child
+            class="group-data-[collapsible=icon]:!p-0 justify-start bg-red hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/50 hover:cursor-pointer"
+            tooltip="Logout"
+          >
+            <button
+              @click="handleLogout"
+              class="flex w-full items-center gap-2"
+            >
+              <LogOut class="h-4 w-4" />
+              <span class="font-medium group-data-[collapsible=icon]:hidden"
+                >Logout</span
+              >
+            </button>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    </SidebarFooter>
+
     <SidebarRail />
   </Sidebar>
 </template>

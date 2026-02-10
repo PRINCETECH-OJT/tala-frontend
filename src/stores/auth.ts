@@ -1,40 +1,36 @@
 import { defineStore } from "pinia";
-import api from "@/services/api";
-import axios from "axios";
+import authService from "@/services/authService";
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  roles?: string[];
+  permissions?: string[];
+  [key: string]: any;
+}
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
-    user: null as any,
+    user: null as User | null,
     permissions: [] as string[],
     roles: [] as string[],
   }),
-
   getters: {
     isAuthenticated: (state) => !!state.user,
   },
-
   actions: {
     async login(credentials: any) {
       try {
-        await axios.get("http://localhost:8000/sanctum/csrf-cookie", {
-          withCredentials: true,
-        });
-
+        await authService.getCsrfCookie();
         await new Promise((resolve) => setTimeout(resolve, 50));
-
-        const token = this.getCookie("XSRF-TOKEN");
-
-        await axios.post("http://localhost:8000/login", credentials, {
-          withCredentials: true,
-          headers: {
-            "X-XSRF-TOKEN": token ? decodeURIComponent(token) : "",
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
-          },
-        });
-
+        await authService.login(credentials);
+        await new Promise((resolve) => setTimeout(resolve, 100));
         await this.fetchUser();
+
+        if (!this.user) {
+          throw new Error("Login succeeded, but failed to fetch user.");
+        }
       } catch (error) {
         throw error;
       }
@@ -42,31 +38,30 @@ export const useAuthStore = defineStore("auth", {
 
     async fetchUser() {
       try {
-        const response = await api.get("/user");
-
+        const response = await authService.getUser();
         const userData = response.data.data || response.data;
-
         this.user = userData;
         this.roles = userData.roles || [];
         this.permissions = userData.permissions || [];
       } catch (error) {
-        this.user = null;
-        this.permissions = [];
-        this.roles = [];
+        this.resetState();
       }
     },
 
     async logout() {
+      this.resetState();
       try {
-        await axios.post(
-          "http://localhost:8000/logout",
-          {},
-          { withCredentials: true },
-        );
-      } catch (error) {}
+        await authService.logout();
+      } catch (error) {
+        console.warn("Logout API failed, but frontend session is cleared.");
+      }
+    },
+
+    resetState() {
       this.user = null;
       this.permissions = [];
       this.roles = [];
+      localStorage.removeItem("token");
     },
 
     can(permissionName: string) {
@@ -77,13 +72,6 @@ export const useAuthStore = defineStore("auth", {
 
     hasRole(roleName: string) {
       return this.roles.includes(roleName);
-    },
-
-    getCookie(name: string) {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(";").shift();
-      return null;
     },
   },
 });

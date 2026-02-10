@@ -11,7 +11,7 @@ const routes = [
     path: "/auth/login",
     name: "Login",
     component: () => import("@/views/auth/LoginPage.vue"),
-    meta: { guest: true },
+    // meta: { guest: true },
   },
   {
     path: "/auth/register",
@@ -32,20 +32,13 @@ const routes = [
         name: "DashboardOverview",
         component: () => import("../views/overview/Dashboard.vue"),
       },
-      // Add your other pages here as you create them:
-      /*
-      {
-        path: "reports",
-        name: "Reports",
-        component: () => import("@/views/overview/ReportsView.vue"),
-      },
+
       {
         path: "users",
         name: "UserManagement",
         component: () => import("@/views/admin/UserManagement.vue"),
-        meta: { permission: 'manage_users' } // Example of RBAC
+        meta: { permission: "users.manage" },
       },
-      */
     ],
   },
 ];
@@ -68,6 +61,8 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: "DashboardOverview" });
   }
   if (to.meta.permission && !auth.can(to.meta.permission as string)) {
+    console.log("Required:", to.meta.permission);
+    console.log("User Permissions:", auth.user?.permissions);
     alert("You do not have permission to view this page.");
     return next({ name: "DashboardOverview" });
   }
