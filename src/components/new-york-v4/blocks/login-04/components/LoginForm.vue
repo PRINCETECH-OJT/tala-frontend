@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { useAuthStore } from "@/stores/auth";
+import { useAuthStore } from "@/stores";
 import type { HTMLAttributes } from "vue";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

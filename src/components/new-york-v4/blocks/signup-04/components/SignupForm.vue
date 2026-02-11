@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { ref, reactive } from "vue";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import authService from "@/services/authService";
+import { authService } from "@/services";
 import type { RegisterForm } from "@/types";
 import { useRouter } from "vue-router";
 import { Card, CardContent } from "@/components/ui/card";
