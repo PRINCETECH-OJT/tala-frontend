@@ -1,13 +1,12 @@
 <script setup lang="ts">
+import AuthLayout from "@/layouts/AuthLayout.vue";
 import LoginForm from "@/components/new-york-v4/blocks/login-04/components/LoginForm.vue";
 </script>
 
 <template>
-  <div
-    class="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10"
-  >
-    <div class="w-full max-w-sm md:max-w-4xl">
+  <AuthLayout>
+    <div class="w-full max-w-[500px]">
       <LoginForm />
     </div>
-  </div>
+  </AuthLayout>
 </template>
