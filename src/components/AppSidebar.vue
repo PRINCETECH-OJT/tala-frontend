@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { useCompanyStore } from "@/stores/company";
 import type { SidebarProps } from "@/components/ui/sidebar";
 import {
   Sidebar,
@@ -57,7 +58,9 @@ interface NavMainItem {
 
 const props = defineProps<SidebarProps>();
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
+const companyStore = useCompanyStore();
 const userName = computed(() => authStore.user?.name || "Guest User");
 
 const userRole = computed(() => {
@@ -87,6 +90,10 @@ const userInitials = computed(() => {
 const handleLogout = async () => {
   await authStore.logout();
   router.push("/auth/login");
+};
+
+const changeCompany = (company: any) => {
+  router.push(`/app/${company.id}/dashboard`);
 };
 
 // --- Menu Data ---
@@ -171,6 +178,24 @@ const data: { navMain: NavMainItem[] } = {
           {{ userRole }}
         </span>
       </div>
+      <div
+        v-if="companyStore.currentCompany"
+        class="mt-3 w-full group-data-[collapsible=icon]:hidden"
+      >
+        <select
+          class="w-full rounded-lg border px-2 py-1 text-sm bg-sidebar-accent"
+          :value="companyStore.currentCompany?.id"
+          @change="changeCompany(companyStore.companies.find(c => c.id == $event.target.value))"
+        >
+          <option
+            v-for="company in companyStore.companies"
+            :key="company.id"
+            :value="company.id"
+          >
+            {{ company.name }}
+          </option>
+        </select>
+      </div>
     </SidebarHeader>
 
     <SidebarContent>
@@ -201,7 +226,7 @@ const data: { navMain: NavMainItem[] } = {
                 >
                   <SidebarMenuSubButton as-child>
                     <RouterLink
-                      :to="childItem.url"
+                      :to="`/app/${route.params.companyId}${childItem.url}`"
                       active-class="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
                       <span>{{ childItem.title }}</span>

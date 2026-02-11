@@ -1,10 +1,11 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { useCompanyStore } from "@/stores/company";
 
 const routes = [
   {
     path: "/",
-    redirect: "/dashboard",
+    redirect: "/auth/login",
   },
 
   {
@@ -20,7 +21,7 @@ const routes = [
   },
 
   {
-    path: "/", 
+    path: "/app/:companyId",
     component: () => import("@/layouts/MainLayout.vue"),
     meta: { requiresAuth: true },
 
@@ -37,7 +38,7 @@ const routes = [
         meta: { permission: "users.manage" },
       },
       {
-        path: "/accounts",
+        path: "accounts",
         name: "ChartofAccounts",  
         component: () => import("@/views/ChartofAccountsPage.vue"), 
       },
@@ -52,6 +53,7 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore();
+  const companyStore = useCompanyStore();
 
   if (!auth.user) {
     await auth.fetchUser();
@@ -59,6 +61,24 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return next({ name: "Login" });
   }
+
+  // If route has companyId param
+  if (to.params.companyId) {
+    if (!companyStore.companies.length) {
+      await companyStore.fetchCompanies();
+    }
+
+    const found = companyStore.companies.find(
+      (c) => c.id == to.params.companyId
+    );
+
+    if (!found) {
+      return next(false);
+    }
+
+    companyStore.setCurrentCompany(found);
+  }
+  
   if (to.meta.guest && auth.isAuthenticated) {
     return next({ name: "DashboardOverview" });
   }
