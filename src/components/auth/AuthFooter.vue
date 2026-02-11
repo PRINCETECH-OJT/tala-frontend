@@ -4,9 +4,9 @@ import { Globe } from "lucide-vue-next";
 
 <template>
   <footer
-    class="w-full bg-[#072069] text-white/60 py-4 px-8 md:px-16 flex flex-col md:flex-row items-center justify-between text-xs z-20 relative"
+    class="w-full bg-[#072069] text-white/60 py-3 px-4 sm:px-8 lg:px-16 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0 text-xs z-20 relative"
   >
-    <div class="mb-2 md:mb-0 flex items-center gap-1">
+    <div class="text-center sm:text-left">
       <span
         >&copy; 2026 T.A.L.A. Accounting System Inc. All rights reserved.</span
       >
@@ -16,7 +16,7 @@ import { Globe } from "lucide-vue-next";
       class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors"
     >
       <Globe class="h-4 w-4" />
-      <span class="font-medium">English (US)</span>
+      <span class="font-medium whitespace-nowrap">English (US)</span>
     </div>
   </footer>
 </template>
