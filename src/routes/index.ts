@@ -10,8 +10,7 @@ const routes = [
   {
     path: "/auth/login",
     name: "Login",
-    component: () => import("@/views/auth/LoginPage.vue"),
-    // meta: { guest: true },
+    component: () => import("@/views/auth/LoginPage.vue"), 
   },
   {
     path: "/auth/register",
@@ -21,26 +20,29 @@ const routes = [
   },
 
   {
-    path: "/dashboard",
-
-    component: () => import("@/layouts/DashboardLayout.vue"),
+    path: "/", 
+    component: () => import("@/layouts/MainLayout.vue"),
     meta: { requiresAuth: true },
 
     children: [
       {
-        path: "",
+        path: "dashboard",
         name: "DashboardOverview",
         component: () => import("../views/overview/Dashboard.vue"),
-      },
-
+      }, 
       {
         path: "users",
         name: "UserManagement",
         component: () => import("@/views/admin/UserManagement.vue"),
         meta: { permission: "users.manage" },
       },
+      {
+        path: "/accounts",
+        name: "ChartofAccounts",  
+        component: () => import("@/views/ChartofAccountsPage.vue"), 
+      },
     ],
-  },
+  }, 
 ];
 
 const router = createRouter({
