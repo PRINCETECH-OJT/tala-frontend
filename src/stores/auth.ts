@@ -1,14 +1,6 @@
 import { defineStore } from "pinia";
 import authService from "@/services/authService";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  roles?: string[];
-  permissions?: string[];
-  [key: string]: any;
-}
+import type { User, LoginForm } from "@/types";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -16,11 +8,13 @@ export const useAuthStore = defineStore("auth", {
     permissions: [] as string[],
     roles: [] as string[],
   }),
+
   getters: {
     isAuthenticated: (state) => !!state.user,
   },
+
   actions: {
-    async login(credentials: any) {
+    async login(credentials: LoginForm) {
       try {
         await authService.getCsrfCookie();
         await new Promise((resolve) => setTimeout(resolve, 50));
@@ -39,7 +33,9 @@ export const useAuthStore = defineStore("auth", {
     async fetchUser() {
       try {
         const response = await authService.getUser();
-        const userData = response.data.data || response.data;
+        const userData =
+          response.data.data || (response.data as unknown as User);
+
         this.user = userData;
         this.roles = userData.roles || [];
         this.permissions = userData.permissions || [];

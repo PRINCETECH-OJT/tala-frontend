@@ -1,32 +1,57 @@
-import axios from "axios"; // Standard axios for the CSRF cookie call
-import api from "@/services/api"; // Your configured instance
+import axios from "axios";
+import api from "@/services/api";
+import type { LoginForm, RegisterForm, User } from "@/types";
 
 const BACKEND_URL = "http://localhost:8000";
 
+const getCookie = (name: string) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift();
+  return null;
+};
+
 export default {
-  // 1. Get the Cookie
   async getCsrfCookie() {
-    // We use standard axios here because we don't need the interceptor yet
     return axios.get(`${BACKEND_URL}/sanctum/csrf-cookie`, {
       withCredentials: true,
     });
   },
 
-  async register(data: any) {
+  async register(data: RegisterForm) {
     await this.getCsrfCookie();
     return api.post("/register", data);
   },
 
-  async login(credentials: any) {
-    await this.getCsrfCookie();
-    return api.post("/login", credentials);
+  async login(credentials: LoginForm) {
+    const token = getCookie("XSRF-TOKEN");
+    return axios.post(`${BACKEND_URL}/login`, credentials, {
+      withCredentials: true,
+      headers: {
+        "X-XSRF-TOKEN": token ? decodeURIComponent(token) : "",
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    });
   },
 
   async logout() {
-    return api.post("/logout");
+    const token = getCookie("XSRF-TOKEN");
+    return axios.post(
+      `${BACKEND_URL}/logout`,
+      {},
+      {
+        withCredentials: true,
+        headers: {
+          "X-XSRF-TOKEN": token ? decodeURIComponent(token) : "",
+          Accept: "application/json",
+        },
+      },
+    );
   },
 
   async getUser() {
-    return api.get("/user");
+    return api.get<{ data: User }>("/user");
   },
 };
