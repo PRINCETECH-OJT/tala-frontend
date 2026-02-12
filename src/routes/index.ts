@@ -1,64 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router"; 
 import { useAuthStore, useCompanyStore } from "@/stores";
-import { routes } from "./routes";
-
-const routes = [
-  {
-    path: "/",
-    redirect: "/auth/login",
-  },
-
-  {
-    path: "/auth/login",
-    name: "Login",
-    component: () => import("@/views/auth/LoginPage.vue"), 
-    meta: { guest: true },
-  },
-  {
-    path: "/auth/register",
-    name: "Register",
-    component: () => import("@/views/auth/RegisterPage.vue"),
-    meta: { guest: true },
-  },
-  {
-    path: "/auth/verify-email",
-    component: () => import("@/views/auth/EmailVerification.vue"),
-  }, 
-  {
-    path: "/auth/email-verified",
-    component: () => import("@/views/auth/EmailVerified.vue"),
-  },
-  {
-    path: "/onboarding/company",
-    component: () => import("@/views/onboarding/CompanyOnboarding.vue"),
-    meta: { requiresAuth: true },
-  },
-
-  {
-    path: "/app/:companyId",
-    component: () => import("@/layouts/MainLayout.vue"),
-    meta: { requiresAuth: true },
-
-    children: [
-      {
-        path: "dashboard",
-        name: "DashboardOverview",
-        component: () => import("../views/overview/Dashboard.vue"),
-      }, 
-      {
-        path: "users",
-        name: "UserManagement",
-        component: () => import("@/views/admin/UserManagement.vue"),
-        meta: { permission: "users.manage" },
-      },
-      {
-        path: "accounts",
-        name: "ChartofAccounts",  
-        component: () => import("@/views/ChartofAccountsPage.vue"), 
-      },
-    ],
-  }, 
-];  
+import { routes } from "./routes"; 
 
 const router = createRouter({
   history: createWebHistory(),

@@ -13,7 +13,7 @@ export const useCompanyStore = defineStore("company", {
 
   actions: {
     async fetchCompanies() {
-      const res = await api.get("/companies") 
+      const res = await api.get("/companies");
       this.companies = res.data.data;
  
       if (!this.currentCompany && this.companies.length) {

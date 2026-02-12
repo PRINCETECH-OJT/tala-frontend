@@ -3,7 +3,7 @@ import { type RouteRecordRaw } from "vue-router";
 export const routes: RouteRecordRaw[] = [
   {
     path: "/",
-    redirect: "/dashboard",
+    redirect: "/auth/login",
   },
   {
     path: "/auth/login",
@@ -20,11 +20,20 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/auth/verify-email",
     name: "Verify",
-    component: () => import("@/views/auth/VerifyPage.vue"),
+    component: () => import("@/views/auth/EmailVerification.vue"),
     meta: { guest: true },
+  }, 
+  {
+    path: "/auth/email-verified",
+    component: () => import("@/views/auth/EmailVerified.vue"),
   },
   {
-    path: "/",
+    path: "/onboarding/company",
+    component: () => import("@/views/onboarding/CompanyOnboarding.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/app/:companyId",
     component: () => import("@/layouts/MainLayout.vue"),
     meta: { requiresAuth: true },
     children: [
