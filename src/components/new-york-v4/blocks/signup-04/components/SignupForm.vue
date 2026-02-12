@@ -29,10 +29,10 @@ const form = reactive({
 const handleRegister = async (e: Event) => {
   e.preventDefault();
 
-  // if (!form.termsAgreed) {
-  //   alert("Please agree to the Terms and Privacy Policy.");
-  //   return;
-  // }
+  if (!form.termsAgreed) {
+    alert("Please agree to the Terms and Privacy Policy.");
+    return;
+  }
 
   isLoading.value = true;
   errors.value = {};
