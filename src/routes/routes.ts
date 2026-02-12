@@ -18,6 +18,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { guest: true },
   },
   {
+    path: "/auth/verify-email",
+    name: "Verify",
+    component: () => import("@/views/auth/VerifyPage.vue"),
+    meta: { guest: true },
+  },
+  {
     path: "/",
     component: () => import("@/layouts/MainLayout.vue"),
     meta: { requiresAuth: true },

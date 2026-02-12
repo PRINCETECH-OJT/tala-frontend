@@ -8,7 +8,7 @@ import { authService } from "@/services";
 import type { RegisterForm } from "@/types";
 import { useRouter } from "vue-router";
 import { Card, CardContent } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 const props = defineProps<{ class?: HTMLAttributes["class"] }>();
