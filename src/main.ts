@@ -1,11 +1,38 @@
 import { createApp } from "vue";
 import { createPinia } from "pinia";
+import { useAuthStore, useCompanyStore } from './stores';
 import "./style.css";
 import App from "./App.vue";
 import router from "./routes";
 
-const app = createApp(App);
-app.use(createPinia());
+const app = createApp(App)
+const pinia = createPinia() 
+app.use(router)
+app.use(pinia) 
 
-app.use(router);
-app.mount("#app");
+const initApp = async () => {
+  const auth = useAuthStore()
+  const companyStore = useCompanyStore()
+
+  try {
+    await auth.fetchUser()
+
+    if (auth.isAuthenticated) {
+      await companyStore.fetchCompanies()
+
+      // If user has companies, redirect to first company dashboard
+      if (companyStore.currentCompany) { 
+        const firstCompanyId = companyStore.currentCompany.id
+        if (router.currentRoute.value.path === "/") {
+          router.replace(`/app/${firstCompanyId}/dashboard`)
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error initializing app:", error)
+  } finally {
+    app.mount('#app')
+  }
+}
+
+initApp()

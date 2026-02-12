@@ -1,15 +1,8 @@
 import axios from "axios";
 import api from "@/services/api";
-import type { LoginForm, RegisterForm, User } from "@/types";
+import type { LoginForm, RegisterForm } from "@/types";
 
-const BACKEND_URL = "http://localhost:8000";
-
-const getCookie = (name: string) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(";").shift();
-  return null;
-};
+const BACKEND_URL = "http://localhost:8000"; 
 
 export default {
   async getCsrfCookie() {
@@ -23,35 +16,26 @@ export default {
     return api.post("/register", data);
   },
 
-  async login(credentials: LoginForm) {
-    const token = getCookie("XSRF-TOKEN");
-    return axios.post(`${BACKEND_URL}/login`, credentials, {
-      withCredentials: true,
-      headers: {
-        "X-XSRF-TOKEN": token ? decodeURIComponent(token) : "",
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-      },
-    });
+  async login(credentials: LoginForm) { 
+    await this.getCsrfCookie();
+    return api.post(`/login`, credentials);
   },
 
-  async logout() {
-    const token = getCookie("XSRF-TOKEN");
-    return axios.post(
-      `${BACKEND_URL}/logout`,
-      {},
-      {
-        withCredentials: true,
-        headers: {
-          "X-XSRF-TOKEN": token ? decodeURIComponent(token) : "",
-          Accept: "application/json",
-        },
-      },
-    );
+  async logout() { 
+    return api.post(`/logout`);
   },
 
   async getUser() {
-    return api.get<{ data: User }>("/user");
+    return api.get("/user");
+  },
+
+  async verifyEmail(id: string, hash: string, expires: string, signature: string) {
+    return api.get(
+      `/email/verify/${id}/${hash}?expires=${expires}&signature=${signature}`
+    );
+  },
+
+  async resendVerification() {
+    return api.post("/email/resend");
   },
 };

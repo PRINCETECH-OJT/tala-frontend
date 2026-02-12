@@ -3,23 +3,14 @@ import axios from "axios";
 const api = axios.create({
   baseURL: "http://localhost:8000/api",
   withCredentials: true,
+  withXSRFToken: true,  
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
+    'X-Requested-With': 'XMLHttpRequest',
   },
-});
-
-api.interceptors.request.use((config) => {
-  const token = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("XSRF-TOKEN="))
-    ?.split("=")[1];
-
-  if (token) {
-    config.headers["X-XSRF-TOKEN"] = decodeURIComponent(token);
-  }
-
-  return config;
-});
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
+}); 
 
 export default api;

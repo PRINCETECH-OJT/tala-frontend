@@ -12,12 +12,26 @@ const routes = [
     path: "/auth/login",
     name: "Login",
     component: () => import("@/views/auth/LoginPage.vue"), 
+    meta: { guest: true },
   },
   {
     path: "/auth/register",
     name: "Register",
     component: () => import("@/views/auth/RegisterPage.vue"),
     meta: { guest: true },
+  },
+  {
+    path: "/auth/verify-email",
+    component: () => import("@/views/auth/EmailVerification.vue"),
+  }, 
+  {
+    path: "/auth/email-verified",
+    component: () => import("@/views/auth/EmailVerified.vue"),
+  },
+  {
+    path: "/onboarding/company",
+    component: () => import("@/views/onboarding/CompanyOnboarding.vue"),
+    meta: { requiresAuth: true },
   },
 
   {
@@ -61,8 +75,23 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return next({ name: "Login" });
   }
-
-  // If route has companyId param
+  
+  if (to.meta.guest && auth.isAuthenticated) {
+    await companyStore.fetchCompanies()
+    if (companyStore.currentCompany) {
+      return next(`/app/${companyStore.currentCompany.id}/dashboard`)
+    } else {
+      return next("/onboarding/company")
+    }
+  }
+  
+  if (to.meta.permission && !auth.can(to.meta.permission as string)) {
+    console.log("Required:", to.meta.permission);
+    console.log("User Permissions:", auth.user?.permissions);
+    alert("You do not have permission to view this page.");
+    return next({ name: "DashboardOverview" });
+  }
+ 
   if (to.params.companyId) {
     if (!companyStore.companies.length) {
       await companyStore.fetchCompanies();
@@ -73,20 +102,10 @@ router.beforeEach(async (to, from, next) => {
     );
 
     if (!found) {
-      return next(false);
+      return next("/onboarding/company");
     }
 
     companyStore.setCurrentCompany(found);
-  }
-  
-  if (to.meta.guest && auth.isAuthenticated) {
-    return next({ name: "DashboardOverview" });
-  }
-  if (to.meta.permission && !auth.can(to.meta.permission as string)) {
-    console.log("Required:", to.meta.permission);
-    console.log("User Permissions:", auth.user?.permissions);
-    alert("You do not have permission to view this page.");
-    return next({ name: "DashboardOverview" });
   }
 
   next();

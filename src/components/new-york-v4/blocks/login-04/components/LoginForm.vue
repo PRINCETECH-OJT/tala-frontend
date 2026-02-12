@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { useAuthStore } from "@/stores/auth";
+import { useAuthStore, useCompanyStore } from "@/stores";
 import type { HTMLAttributes } from "vue";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,20 +22,34 @@ const handleLogin = async () => {
   isLoading.value = true;
   errorMessage.value = "";
 
-  try {
+  const companyStore = useCompanyStore();
+
+  try { 
     await auth.login({
       email: email.value,
       password: password.value,
       remember: rememberMe.value,
-    });
-
-    router.push({ name: "DashboardOverview" });
+    }); 
+    await auth.fetchUser();
+ 
+    await companyStore.fetchCompanies(); 
+ 
+    if (companyStore.currentCompany) {
+      const companyId = companyStore.currentCompany.id;
+      router.replace(`/app/${companyId}/dashboard`);
+    } else {
+      router.replace("/onboarding/company");
+    }
   } catch (error: any) {
     if (
       error.response &&
       (error.response.status === 401 || error.response.status === 422)
     ) {
       errorMessage.value = "Invalid email or password.";
+    } else if (error.type === "requires_onboarding") {
+      router.push("/onboarding/company");
+    } else if (error.type === "email_not_verified") {
+      router.push("/auth/verify-email");
     } else {
       errorMessage.value = "Server error. Please try again later.";
     }

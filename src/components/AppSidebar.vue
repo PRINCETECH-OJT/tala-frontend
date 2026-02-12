@@ -93,6 +93,7 @@ const handleLogout = async () => {
 };
 
 const changeCompany = (company: any) => {
+  companyStore.setCurrentCompany(company);
   router.push(`/app/${company.id}/dashboard`);
 };
 
@@ -184,8 +185,8 @@ const data: { navMain: NavMainItem[] } = {
       >
         <select
           class="w-full rounded-lg border px-2 py-1 text-sm bg-sidebar-accent"
-          :value="companyStore.currentCompany?.id"
-          @change="changeCompany(companyStore.companies.find(c => c.id == $event.target.value))"
+          :value="companyStore.companyId"
+          @change="changeCompany(companyStore.companies.find(c => c.id == $event.target?.value))"
         >
           <option
             v-for="company in companyStore.companies"
@@ -209,11 +210,22 @@ const data: { navMain: NavMainItem[] } = {
         >
           <SidebarMenuItem>
             <CollapsibleTrigger as-child>
-              <SidebarMenuButton :tooltip="item.title">
-                <component :is="item.icon" />
-                <span class="font-medium">{{ item.title }}</span>
+              <SidebarMenuButton
+                :tooltip="item.title"
+                class="flex items-center gap-2
+                      group-data-[collapsible=icon]:justify-center
+                      group-data-[collapsible=icon]:gap-0"
+              >
+                <component :is="item.icon" class="h-5 w-5" />
+                <span
+                  class="font-medium group-data-[collapsible=icon]:hidden"
+                >
+                  {{ item.title }}
+                </span>
                 <ChevronRight
-                  class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
+                  class="ml-auto transition-transform duration-200
+                        group-data-[state=open]/collapsible:rotate-90
+                        group-data-[collapsible=icon]:hidden"
                 />
               </SidebarMenuButton>
             </CollapsibleTrigger>
@@ -226,9 +238,9 @@ const data: { navMain: NavMainItem[] } = {
                 >
                   <SidebarMenuSubButton as-child>
                     <RouterLink
-                      :to="`/app/${route.params.companyId}${childItem.url}`"
+                      :to="`/app/${companyStore.companyId}${childItem.url}`"
                       active-class="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    >
+                    > 
                       <span>{{ childItem.title }}</span>
                     </RouterLink>
                   </SidebarMenuSubButton>
@@ -250,12 +262,12 @@ const data: { navMain: NavMainItem[] } = {
           >
             <button
               @click="handleLogout"
-              class="flex w-full items-center gap-2"
+              class="flex w-full items-center gap-2
+                    group-data-[collapsible=icon]:justify-center
+                    group-data-[collapsible=icon]:gap-0"
             >
               <LogOut class="h-4 w-4" />
-              <span class="font-medium group-data-[collapsible=icon]:hidden"
-                >Logout</span
-              >
+              <span class="font-medium group-data-[collapsible=icon]:hidden">Logout</span>
             </button>
           </SidebarMenuButton>
         </SidebarMenuItem>
