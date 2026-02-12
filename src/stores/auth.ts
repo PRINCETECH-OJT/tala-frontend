@@ -15,15 +15,15 @@ export const useAuthStore = defineStore("auth", {
 
   actions: {
     async login(credentials: LoginForm) {
-      try {
-        await authService.getCsrfCookie();
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        await authService.login(credentials);
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        await this.fetchUser();
+      try { 
+        const response = await authService.login(credentials);
 
-        if (!this.user) {
-          throw new Error("Login succeeded, but failed to fetch user.");
+        if (response.data.requires_email_verification) {
+          throw { type: "email_not_verified" };
+        }
+
+        if (response.data.requires_onboarding) {
+          throw { type: "requires_onboarding" };
         }
       } catch (error) {
         throw error;
@@ -33,8 +33,7 @@ export const useAuthStore = defineStore("auth", {
     async fetchUser() {
       try {
         const response = await authService.getUser();
-        const userData =
-          response.data.data || (response.data as unknown as User);
+        const userData = response.data.data; 
 
         this.user = userData;
         this.roles = userData.roles || [];

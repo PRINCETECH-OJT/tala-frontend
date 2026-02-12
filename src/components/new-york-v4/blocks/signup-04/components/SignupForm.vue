@@ -29,10 +29,10 @@ const form = reactive({
 const handleRegister = async (e: Event) => {
   e.preventDefault();
 
-  if (!form.termsAgreed) {
-    alert("Please agree to the Terms and Privacy Policy.");
-    return;
-  }
+  // if (!form.termsAgreed) {
+  //   alert("Please agree to the Terms and Privacy Policy.");
+  //   return;
+  // }
 
   isLoading.value = true;
   errors.value = {};
@@ -44,7 +44,7 @@ const handleRegister = async (e: Event) => {
 
   try {
     await authService.register(payload);
-    router.push("/dashboard");
+    router.push("/auth/verify-email");  
   } catch (error: any) {
     if (error.response?.status === 422) {
       errors.value = error.response.data.errors;
