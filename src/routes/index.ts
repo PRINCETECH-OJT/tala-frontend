@@ -14,6 +14,7 @@ router.beforeEach(async (to, from, next) => {
   if (!auth.user) {
     await auth.fetchUser();
   }
+  
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return next({ name: "Login" });
   }

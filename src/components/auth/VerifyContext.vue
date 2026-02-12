@@ -1,8 +1,53 @@
 <script setup lang="ts">
-import { useRouter } from "vue-router";
+import { ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import type { HTMLAttributes } from "vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { authService } from "@/services";
+import { useAuthStore } from "@/stores";
+
+const auth = useAuthStore();  
+const router = useRouter();
+const route = useRoute();
+const loading = ref(false);
+const message = ref("We've sent a verification link to your email.");
+
+const resendEmail = async () => {
+  loading.value = true;
+  try {
+    await authService.resendVerification();
+    message.value = "Verification email sent again.";
+  } catch (err) {
+    message.value = "Failed to resend email.";
+  } finally {
+    loading.value = false;
+  }
+};
+ 
+const verifyEmail = async () => {
+  const { id, hash, expires, signature } = route.query;
+
+  if (id && hash) {
+    loading.value = true;
+    try {
+      await authService.verifyEmail(
+        id as string,
+        hash as string,
+        expires as string,
+        signature as string
+      );
+      await auth.fetchUser();
+      router.push("/onboarding/company");
+    } catch (err) {
+      message.value = "Verification failed or expired.";
+    } finally {
+      loading.value = false;
+    }
+  }
+};
+
+verifyEmail();
 
 const props = defineProps<{
   class?: HTMLAttributes["class"];
@@ -11,7 +56,7 @@ const props = defineProps<{
 
 <template>
   <h1 class="text-center text-white text-4xl font-bold mb-10">
-    Hi, <span class="text-yellow-400">User!</span> Confirm your email and start
+    Hi, <span class="text-yellow-400">{{ auth.user?.name }}</span> Confirm your email and start
     <br />
     using <span class="text-yellow-400">T.A.L.A</span>
   </h1>
@@ -24,7 +69,7 @@ const props = defineProps<{
         <div class="flex flex-col items-center gap-2">
           <h1 class="font-sans font-semibold text-gray-400 text-lg">
             We sent an email to
-            <span class="text-[#253D90]">example@gmail.com</span>
+            <span class="text-[#253D90]">{{ auth.user?.email }}</span>
           </h1>
           <p class="text-xs text-gray-400">
             Please check your inbox (and spam folder) to proceed
@@ -65,6 +110,17 @@ const props = defineProps<{
         >
           <RouterLink to="/auth/login">Log-in Now</RouterLink>
         </Button>
+
+        <h3 class="text-gray-400">Didn't receive an email? 
+          <span class="text-blue-800 cursor-pointer">
+            <a 
+              @click="resendEmail"
+              :disabled="loading"
+            >
+            Resend verification email.
+            </a>
+          </span>
+        </h3>
       </div>
     </CardContent>
   </Card>

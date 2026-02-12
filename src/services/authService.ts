@@ -8,6 +8,14 @@ export default {
   async getCsrfCookie() {
     return axios.get(`${BACKEND_URL}/sanctum/csrf-cookie`, {
       withCredentials: true,
+      withXSRFToken: true,  
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      xsrfCookieName: 'XSRF-TOKEN',
+      xsrfHeaderName: 'X-XSRF-TOKEN',
     });
   },
 
@@ -26,6 +34,7 @@ export default {
   },
 
   async getUser() {
+    await this.getCsrfCookie();
     return api.get("/user");
   },
 

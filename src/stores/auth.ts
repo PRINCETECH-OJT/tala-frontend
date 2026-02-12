@@ -34,6 +34,7 @@ export const useAuthStore = defineStore("auth", {
       try {
         const response = await authService.getUser();
         const userData = response.data.data; 
+        console.log(userData);
 
         this.user = userData;
         this.roles = userData.roles || [];

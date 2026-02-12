@@ -20,13 +20,8 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/auth/verify-email",
     name: "Verify",
-    component: () => import("@/views/auth/EmailVerification.vue"),
-    meta: { guest: true },
-  }, 
-  {
-    path: "/auth/email-verified",
-    component: () => import("@/views/auth/EmailVerified.vue"),
-  },
+    component: () => import("@/views/auth/VerifyPage.vue"), 
+  },  
   {
     path: "/onboarding/company",
     component: () => import("@/views/onboarding/CompanyOnboarding.vue"),
