@@ -1,6 +1,6 @@
-import { createRouter, createWebHistory } from "vue-router";
-import { useAuthStore } from "@/stores/auth";
-import { useCompanyStore } from "@/stores/company";
+import { createRouter, createWebHistory } from "vue-router"; 
+import { useAuthStore, useCompanyStore } from "@/stores";
+import { routes } from "./routes";
 
 const routes = [
   {
@@ -58,7 +58,7 @@ const routes = [
       },
     ],
   }, 
-];
+];  
 
 const router = createRouter({
   history: createWebHistory(),
