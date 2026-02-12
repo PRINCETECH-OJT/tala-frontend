@@ -37,9 +37,13 @@ const handleRegister = async (e: Event) => {
   isLoading.value = true;
   errors.value = {};
 
-  const payload = {
-    ...form,
+  const payload: RegisterForm = {
     name: `${form.first_name} ${form.last_name}`.trim(),
+    email: form.email,
+    phone: form.phone,
+    password: form.password,
+    password_confirmation: form.password_confirmation,
+    terms: form.termsAgreed,
   };
 
   try {
@@ -151,7 +155,7 @@ const handleRegister = async (e: Event) => {
             <div class="flex flex-row items-center gap-3">
               <Checkbox
                 id="terms"
-                v-model:checked="form.termsAgreed"
+                v-model="form.termsAgreed"
                 class="mt-0.5 border-blue-900 h-4 w-4"
               />
               <label

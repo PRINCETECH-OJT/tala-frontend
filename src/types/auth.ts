@@ -18,6 +18,7 @@ export interface RegisterForm {
   phone: string;
   password: string;
   password_confirmation: string;
+  terms: boolean;
 }
 
 export interface LoginForm {
