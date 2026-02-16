@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AuthLayout from "@/layouts/AuthLayout.vue";
+import { AuthLayout } from "@/layouts";
 import LoginForm from "@/components/new-york-v4/blocks/login-04/components/LoginForm.vue";
 </script>
 
