@@ -7,9 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useCompanyStore } from "@/stores/company";
 import api from "@/services/api";
-import type { CompanyForm } from "@/types";
 import {} from "lucide-vue-next";
 import type { HTMLAttributes } from "vue";
+import type { CompanyForm } from "@/types/company";
 
 const props = defineProps<{ class?: HTMLAttributes["class"] }>();
 const companyStore = useCompanyStore();
