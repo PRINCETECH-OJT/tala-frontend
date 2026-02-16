@@ -247,7 +247,7 @@ const closeDetailsModal = () => {
 }
 
 /* -----------------------------
-   TYPES FOR FILTER
+   ITEM TYPES FOR FILTER
 ------------------------------ */
 const types = [
   { value: "", label: "All Types" },
@@ -354,8 +354,7 @@ onMounted(fetchItems)
           <thead class="bg-gray-50 dark:bg-slate-700 text-left">
             <tr>
               <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">SKU</th>
-              <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Name</th>
-              <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Type</th>
+              <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Name</th> 
               <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Description</th>
               <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Sales Price / Cost Price</th>
               <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Quantity on Hand</th>
@@ -381,29 +380,18 @@ onMounted(fetchItems)
                   <span class="text-gray-900 dark:text-white">{{ item.name }}</span>
                   <span
                     v-if="item.is_product"
-                    class="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded"
+                    class="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded"
                   >
                     Product
                   </span>
                   <span
                     v-else-if="item.is_service"
-                    class="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded"
+                    class="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded"
                   >
                     Service
                   </span>
                 </div>
-              </td>
-
-              <td class="px-4 py-3">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
-                      :class="{
-                        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': item.type === 'service',
-                        'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300': item.type === 'product'
-                      }"
-                >
-                  {{ item.type }}
-                </span>
-              </td>
+              </td> 
 
               <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
                 {{ item.description }}
