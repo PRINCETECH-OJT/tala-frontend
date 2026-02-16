@@ -115,6 +115,7 @@ const data: { navMain: NavMainItem[] } = {
         { title: "General Ledger", url: "/ledger", icon: BookOpen },
         { title: "Banking", url: "/banking", icon: CreditCard },
         { title: "Accounts", url: "/accounts", icon: CreditCard },
+        { title: "Tax Rates", url: "/taxes", icon: ReceiptCent },
       ],
     },
     {
