@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from "vue"
 import { useRoute } from "vue-router"
-import type { Account, AccountType, FormData } from '@/types';
+import type { Account, AccountType, AccountFormData } from '@/types';
 import api from "@/services/api"  
 
 const route = useRoute()
@@ -69,7 +69,7 @@ const savingAccount = ref(false)
 const accountTypes = ref<AccountType[]>([])
 const parentAccounts = ref<Account[]>([])
 
-const form = ref<FormData>({
+const form = ref<AccountFormData>({
   number: "",
   name: "",
   account_type_id: "",
