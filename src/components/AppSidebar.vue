@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRouter, useRoute, RouterLink } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useCompanyStore } from "@/stores/company";
 import type { SidebarProps } from "@/components/ui/sidebar";
+import type { NavMainItem, Company } from "@/types";
+
 import {
   Sidebar,
   SidebarContent,
@@ -41,43 +43,26 @@ import {
   LogOut,
 } from "lucide-vue-next";
 
-interface NavItem {
-  title: string;
-  url: string;
-  icon?: any;
-  isActive?: boolean;
-}
-
-interface NavMainItem {
-  title: string;
-  url?: string;
-  icon: any;
-  isActive?: boolean;
-  items: NavItem[];
-}
-
 const props = defineProps<SidebarProps>();
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 const companyStore = useCompanyStore();
+
 const userName = computed(() => authStore.user?.name || "Guest User");
 
 const userRole = computed(() => {
   const roles = authStore.user?.roles;
-
-  if (roles && roles.length > 0) {
-    const role = roles[0];
-    if (role) {
-      return role.charAt(0).toUpperCase() + role.slice(1);
-    }
-  }
-
-  return "User";
+  if (!roles?.length) return "User";
+  // Logic to capitalize the first role found
+  const role = roles[0];
+  return typeof role === "string"
+    ? role.charAt(0).toUpperCase() + role.slice(1)
+    : "User";
 });
 
 const userInitials = computed(() => {
-  const name = authStore.user?.name || "";
+  const name = authStore.user?.name || "GU";
   return name
     .split(" ")
     .map((n) => n[0])
@@ -92,11 +77,12 @@ const handleLogout = async () => {
 };
 
 const changeCompany = (company: any) => {
-  companyStore.setCurrentCompany(company);
-  router.push(`/app/${company.id}/dashboard`);
+  if (company) {
+    companyStore.setCurrentCompany(company);
+    router.push(`/app/${company.id}/dashboard`);
+  }
 };
 
-// --- Menu Data ---
 const data: { navMain: NavMainItem[] } = {
   navMain: [
     {
@@ -114,7 +100,7 @@ const data: { navMain: NavMainItem[] } = {
       items: [
         { title: "General Ledger", url: "/ledger", icon: BookOpen },
         { title: "Banking", url: "/banking", icon: CreditCard },
-        { title: "Accounts", url: "/accounts", icon: CreditCard },
+        { title: "Accounts", url: "/acco unts", icon: CreditCard },
         { title: "Tax Rates", url: "/taxes", icon: ReceiptCent },
       ],
     },
@@ -122,6 +108,7 @@ const data: { navMain: NavMainItem[] } = {
       title: "Operations",
       icon: Briefcase,
       items: [
+        { title: "Contacts", url: "/contacts", icon: Landmark },
         { title: "Sales (AR)", url: "/sales", icon: CreditCard },
         { title: "Purchases (AP)", url: "/purchases", icon: Receipt },
         { title: "Invoices", url: "/invoices", icon: FileText },
@@ -133,11 +120,7 @@ const data: { navMain: NavMainItem[] } = {
       icon: ShieldCheck,
       items: [
         { title: "User Management", url: "/users", icon: Users },
-        {
-          title: "Roles & Permissions",
-          url: "/roles",
-          icon: ShieldCheck,
-        },
+        { title: "Roles & Permissions", url: "/roles", icon: ShieldCheck },
         { title: "Settings", url: "/settings", icon: Settings },
       ],
     },
@@ -181,21 +164,43 @@ const data: { navMain: NavMainItem[] } = {
       </div>
       <div
         v-if="companyStore.currentCompany"
-        class="mt-3 w-full group-data-[collapsible=icon]:hidden"
+        class="mt-4 w-full px-2 group-data-[collapsible=icon]:hidden"
       >
-        <select
-          class="w-full rounded-lg border px-2 py-1 text-sm bg-sidebar-accent"
-          :value="companyStore.companyId"
-          @change="changeCompany(companyStore.companies.find(c => c.id == $event.target?.value))"
+        <label
+          class="text-xs font-semibold uppercase tracking-widest text-secondary mb-2 block"
         >
-          <option
-            v-for="company in companyStore.companies"
-            :key="company.id"
-            :value="company.id"
+          Company
+        </label>
+        <div
+          class="flex items-center gap-2 rounded-lg bg-sidebar-accent/50 p-2 hover:bg-sidebar-accent transition-colors"
+        >
+          <img
+            v-if="companyStore.currentCompany?.logo_url"
+            :src="companyStore.currentCompany.logo_url"
+            :alt="companyStore.currentCompany.name"
+            class="h-6 w-6 rounded object-cover"
+          />
+          <select
+            class="flex-1 bg-transparent text-sm font-medium outline-none cursor-pointer"
+            :value="companyStore.companyId"
+            @change="
+              (e) =>
+                changeCompany(
+                  companyStore.companies.find(
+                    (c) => c.id === (e.target as HTMLSelectElement).value,
+                  ),
+                )
+            "
           >
-            {{ company.name }}
-          </option>
-        </select>
+            <option
+              v-for="company in companyStore.companies"
+              :key="company.id"
+              :value="company.id"
+            >
+              {{ company.name }}
+            </option>
+          </select>
+        </div>
       </div>
     </SidebarHeader>
 
@@ -212,20 +217,14 @@ const data: { navMain: NavMainItem[] } = {
             <CollapsibleTrigger as-child>
               <SidebarMenuButton
                 :tooltip="item.title"
-                class="flex items-center gap-2
-                      group-data-[collapsible=icon]:justify-center
-                      group-data-[collapsible=icon]:gap-0"
+                class="flex items-center gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
               >
                 <component :is="item.icon" class="h-5 w-5" />
-                <span
-                  class="font-medium group-data-[collapsible=icon]:hidden"
-                >
+                <span class="font-medium group-data-[collapsible=icon]:hidden">
                   {{ item.title }}
                 </span>
                 <ChevronRight
-                  class="ml-auto transition-transform duration-200
-                        group-data-[state=open]/collapsible:rotate-90
-                        group-data-[collapsible=icon]:hidden"
+                  class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden"
                 />
               </SidebarMenuButton>
             </CollapsibleTrigger>
@@ -240,7 +239,7 @@ const data: { navMain: NavMainItem[] } = {
                     <RouterLink
                       :to="`/app/${companyStore.companyId}${childItem.url}`"
                       active-class="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    > 
+                    >
                       <span>{{ childItem.title }}</span>
                     </RouterLink>
                   </SidebarMenuSubButton>
@@ -252,22 +251,22 @@ const data: { navMain: NavMainItem[] } = {
       </SidebarMenu>
     </SidebarContent>
 
-    <SidebarFooter class="p-2">
+    <SidebarFooter class="p-2 border-sidebar-border">
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton
             as-child
-            class="group-data-[collapsible=icon]:!p-0 justify-start bg-red hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/50 hover:cursor-pointer"
+            class="group-data-[collapsible=icon]:!p-0 justify-center hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/50 cursor-pointer transition-colors"
             tooltip="Logout"
           >
             <button
               @click="handleLogout"
-              class="flex w-full items-center gap-2
-                    group-data-[collapsible=icon]:justify-center
-                    group-data-[collapsible=icon]:gap-0"
+              class="flex w-full items-center justify-center gap-2 group-data-[collapsible=icon]:gap-0"
             >
               <LogOut class="h-4 w-4" />
-              <span class="font-medium group-data-[collapsible=icon]:hidden">Logout</span>
+              <span class="font-medium group-data-[collapsible=icon]:hidden">
+                Logout
+              </span>
             </button>
           </SidebarMenuButton>
         </SidebarMenuItem>

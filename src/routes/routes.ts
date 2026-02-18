@@ -60,10 +60,15 @@ export const routes: RouteRecordRaw[] = [
         component: () => import("@/views/ChartofAccountsPage.vue"),
       },
       {
+        path: "contacts",
+        name: "Contacts",
+        component: () => import("@/views/admin/ContactPage.vue"),
+      },
+      {
         path: "settings",
         name: "Settings",
         meta: { permission: "system.settings" },
-        component: () => import("@/views/admin/settings/SettingsLayout.vue"),
+        component: () => import("@/views/admin/settings/SettingsPage.vue"),
       },
     ],
   },

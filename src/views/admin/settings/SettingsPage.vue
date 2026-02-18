@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useCompanyStore } from "@/stores/company";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,25 +9,37 @@ import {
   FileText,
   ShieldCheck,
   Save,
+  CheckCircle2,
 } from "lucide-vue-next";
 
-// Import the sub-components (We will create these next)
-import GeneralTab from "./GeneralTab.vue";
-import FinanceTab from "./FinanceTab.vue";
+import GeneralTab from "../../../components/admin/setting/GeneralTab.vue";
+import FinanceTab from "../../../components/admin/setting/FinanceTab.vue";
 
 const loading = ref(false);
+const successMessage = ref(false);
 const activeTab = ref("general");
 
-// Mock Save Function (We will connect this to API tomorrow)
-const handleSave = () => {
-  loading.value = true;
-  console.log("Saving settings for tab:", activeTab.value);
+const generalTabRef = ref();
+const financeTabRef = ref();
 
-  setTimeout(() => {
+const handleSave = async () => {
+  loading.value = true;
+  successMessage.value = false;
+
+  try {
+    if (activeTab.value === "general" && generalTabRef.value) {
+      await generalTabRef.value.saveSettings();
+    } else if (activeTab.value === "finance" && financeTabRef.value) {
+      console.log("Finance Save Triggered");
+    }
+
+    successMessage.value = true;
+    setTimeout(() => (successMessage.value = false), 3000);
+  } catch (error: any) {
+    console.error("Global Save Error:", error);
+  } finally {
     loading.value = false;
-    // You can add a toast notification here later
-    alert("Settings Saved Successfully (Mock)");
-  }, 1000);
+  }
 };
 </script>
 
@@ -36,22 +49,31 @@ const handleSave = () => {
       class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
     >
       <div>
-        <h1 class="text-2xl font-bold text-blue-900 tracking-tight">
+        <h1 class="text-2xl font-bold text-black tracking-tight">
           System Settings
         </h1>
         <p class="text-muted-foreground text-sm">
-          Manage your organization profile and accounting preferences.
+          Manage organization profile and accounting preferences.
         </p>
       </div>
 
-      <Button
-        class="bg-primary hover:bg-amber-400 text-black font-semibold gap-2 shadow-sm"
-        :disabled="loading"
-        @click="handleSave"
-      >
-        <Save class="w-4 h-4" />
-        {{ loading ? "Saving..." : "Save Changes" }}
-      </Button>
+      <div class="flex items-center gap-4">
+        <span
+          v-if="successMessage"
+          class="flex items-center gap-1.5 text-sm text-green-600 animate-in fade-in slide-in-from-right-2"
+        >
+          <CheckCircle2 class="w-4 h-4" /> Changes saved
+        </span>
+
+        <Button
+          class="bg-primary cursor-pointer hover:bg-amber-400 text-black font-semibold gap-2 shadow-sm"
+          :disabled="loading"
+          @click="handleSave"
+        >
+          <Save class="w-4 h-4" />
+          {{ loading ? "Saving..." : "Save Changes" }}
+        </Button>
+      </div>
     </div>
 
     <Tabs default-value="general" v-model="activeTab" class="w-full">
@@ -60,25 +82,25 @@ const handleSave = () => {
       >
         <TabsTrigger
           value="general"
-          class="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-blue-900 data-[state=active]:shadow-sm transition-all"
+          class="flex items-center gap-2 cursor-pointer data-[state=active]:bg-white data-[state=active]:text-blue-900 transition-all"
         >
           <Building2 class="w-4 h-4" /> General
         </TabsTrigger>
         <TabsTrigger
           value="finance"
-          class="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-blue-900 data-[state=active]:shadow-sm transition-all"
+          class="flex items-center gap-2 cursor-pointer data-[state=active]:bg-white data-[state=active]:text-blue-900 transition-all"
         >
           <Landmark class="w-4 h-4" /> Finance
         </TabsTrigger>
         <TabsTrigger
           value="sales"
-          class="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-blue-900 data-[state=active]:shadow-sm transition-all"
+          class="flex items-center gap-2 cursor-pointer data-[state=active]:bg-white data-[state=active]:text-blue-900 transition-all"
         >
           <FileText class="w-4 h-4" /> Sales
         </TabsTrigger>
         <TabsTrigger
           value="system"
-          class="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-blue-900 data-[state=active]:shadow-sm transition-all"
+          class="flex items-center gap-2 cursor-pointer data-[state=active]:bg-white data-[state=active]:text-blue-900 transition-all"
         >
           <ShieldCheck class="w-4 h-4" /> System
         </TabsTrigger>
@@ -88,14 +110,14 @@ const handleSave = () => {
         value="general"
         class="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
       >
-        <GeneralTab />
+        <GeneralTab ref="generalTabRef" />
       </TabsContent>
 
       <TabsContent
         value="finance"
         class="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
       >
-        <FinanceTab />
+        <FinanceTab ref="financeTabRef" />
       </TabsContent>
 
       <TabsContent value="sales">
@@ -105,7 +127,6 @@ const handleSave = () => {
           Sales Settings Coming Soon...
         </div>
       </TabsContent>
-
       <TabsContent value="system">
         <div
           class="p-12 text-center text-gray-500 border-2 border-dashed rounded-xl"
