@@ -5,6 +5,7 @@ export const useCompanyStore = defineStore("company", {
   state: () => ({
     companies: [] as any[],
     currentCompany: null as any | null,
+    isLoading: false,
   }),
 
   getters: {
@@ -13,11 +14,18 @@ export const useCompanyStore = defineStore("company", {
 
   actions: {
     async fetchCompanies() {
-      const res = await api.get("/companies");
-      this.companies = res.data.data;
- 
-      if (!this.currentCompany && this.companies.length) {
-        this.currentCompany = this.companies[0]; 
+      if (this.companies.length || this.isLoading) return;
+
+      this.isLoading = true;
+      try {
+        const res = await api.get("/companies");
+        this.companies = res.data.data;
+
+        if (!this.currentCompany && this.companies.length) {
+          this.currentCompany = this.companies[0];
+        }
+      } finally {
+        this.isLoading = false;
       }
     },
 
@@ -33,6 +41,7 @@ export const useCompanyStore = defineStore("company", {
     reset() {
       this.companies = [];
       this.currentCompany = null;
+      this.isLoading = false;
     },
   },
 })
