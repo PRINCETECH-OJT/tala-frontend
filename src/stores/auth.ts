@@ -45,11 +45,12 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async logout() {
-      this.resetState();
       try {
         await authService.logout();
       } catch (error) {
-        console.warn("Logout API failed, but frontend session is cleared.");
+        console.warn("Logout API failed:", error);
+      } finally {
+        this.resetState();
       }
     },
 
@@ -57,7 +58,6 @@ export const useAuthStore = defineStore("auth", {
       this.user = null;
       this.permissions = [];
       this.roles = [];
-      localStorage.removeItem("token");
     },
 
     can(permissionName: string) {

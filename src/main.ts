@@ -11,27 +11,23 @@ app.use(router)
 app.use(pinia) 
 
 const initApp = async () => {
-  const auth = useAuthStore()
-  const companyStore = useCompanyStore()
+  const auth = useAuthStore();
+  const companyStore = useCompanyStore();
 
   try {
-    await auth.fetchUser()
+    await auth.fetchUser();
 
     if (auth.isAuthenticated) {
-      await companyStore.fetchCompanies()
+      await companyStore.fetchCompanies();
 
-      // If user has companies, redirect to first company dashboard
-      if (companyStore.currentCompany) { 
-        const firstCompanyId = companyStore.currentCompany.id
-        if (router.currentRoute.value.path === "/") {
-          router.replace(`/app/${firstCompanyId}/dashboard`)
-        }
+      if (companyStore.currentCompany && router.currentRoute.value.path === "/") {
+        router.replace(`/app/${companyStore.currentCompany.id}/dashboard`);
       }
     }
   } catch (error) {
-    console.error("Error initializing app:", error)
+    console.error("Error initializing app:", error);
   } finally {
-    app.mount('#app')
+    app.mount("#app");
   }
 }
 
