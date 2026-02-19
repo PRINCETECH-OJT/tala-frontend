@@ -27,6 +27,8 @@ const props = defineProps<{
   loading?: boolean;
 }>();
 
+const emit = defineEmits(["view", "edit", "delete", "toggle-active"]);
+
 const getInitial = (name: string) => {
   return name ? name.charAt(0).toUpperCase() : "?";
 };
@@ -119,17 +121,42 @@ const getInitial = (name: string) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" class="w-40">
-                <DropdownMenuItem class="cursor-pointer">
+                <DropdownMenuItem
+                  class="cursor-pointer"
+                  @click="emit('view', contact)"
+                >
                   <Eye class="w-4 h-4 mr-2 text-slate-500" /> View
                 </DropdownMenuItem>
-                <DropdownMenuItem class="cursor-pointer">
+
+                <DropdownMenuItem
+                  class="cursor-pointer"
+                  @click="emit('edit', contact)"
+                >
                   <Edit class="w-4 h-4 mr-2 text-slate-500" /> Edit
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+
                 <DropdownMenuItem
+                  class="cursor-pointer"
+                  @click="emit('toggle-active', contact)"
+                >
+                  <div
+                    v-if="contact.is_active"
+                    class="flex items-center text-amber-600"
+                  >
+                    <Trash2 class="w-4 h-4 mr-2" /> Archive
+                  </div>
+                  <div v-else class="flex items-center text-green-600">
+                    <Plus class="w-4 h-4 mr-2" /> Restore
+                  </div>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem
+                  @click="emit('delete', contact)"
                   class="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
                 >
-                  <Trash2 class="w-4 h-4 mr-2" /> Delete
+                  <Trash2 class="w-4 h-4 mr-2" /> Permanent Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

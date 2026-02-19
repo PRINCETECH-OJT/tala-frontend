@@ -16,6 +16,7 @@ export interface Contact {
   type: string;
   contact_name: string;
   person_name?: string;
+  person_number: string;
   email?: string;
   phone?: string;
   payment_terms?: string;
@@ -27,11 +28,13 @@ export interface Contact {
 }
 
 export interface ContactFormState {
-  type: "customer" | "vendor";
+  type: string;
   contact_name: string;
   person_name: string;
+  person_number: string;
   email: string;
   phone: string;
   payment_terms: string;
+  is_active: boolean;
   addresses: ContactAddress[];
 }
