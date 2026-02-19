@@ -20,7 +20,15 @@ const initApp = async () => {
     if (auth.isAuthenticated) {
       await companyStore.fetchCompanies();
 
-      if (companyStore.currentCompany && router.currentRoute.value.path === "/") {
+      if (companyStore.currentCompany && 
+        (router.currentRoute.value.path === "/" || 
+          router.currentRoute.value.path === "/auth/login" || 
+          router.currentRoute.value.path === "/auth/register" || 
+          router.currentRoute.value.path === "/auth/verify-email" || 
+          router.currentRoute.value.path === "/onboarding/company"
+        )
+      )
+      {
         router.replace(`/app/${companyStore.currentCompany.id}/dashboard`);
       }
     }

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import authService from "@/services/authService";
+import { useCompanyStore } from "./company";
 import type { User, LoginForm } from "@/types";
 
 export const useAuthStore = defineStore("auth", {
@@ -50,6 +51,8 @@ export const useAuthStore = defineStore("auth", {
       } catch (error) {
         console.warn("Logout API failed:", error);
       } finally {
+        const companyStore = useCompanyStore();
+        companyStore.reset();
         this.resetState();
       }
     },

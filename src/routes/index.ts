@@ -9,9 +9,9 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore();
-  const companyStore = useCompanyStore();
+  const companyStore = useCompanyStore(); 
 
-  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+  if (to.meta.requiresAuth && (!auth.isAuthenticated || !auth.user)) {
     return next({ name: "Login" });
   }
 
