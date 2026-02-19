@@ -27,10 +27,10 @@ export interface Account {
   parent_account: Account | null
   parent_account_id: number | null
   sub_accounts: Account[]
-  has_sub_accounts: boolean
+  has_sub_accounts: boolean 
 }
 
-export interface FormData {
+export interface AccountFormData {
   number: string
   name: string
   account_type_id: string | number

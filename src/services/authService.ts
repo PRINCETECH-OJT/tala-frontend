@@ -2,39 +2,50 @@ import axios from "axios";
 import api from "@/services/api";
 import type { LoginForm, RegisterForm } from "@/types";
 
-const BACKEND_URL = "http://localhost:8000"; 
+const BACKEND_URL = "http://localhost:8000";
+
+let csrfPromise: Promise<void> | null = null;
+
+const getCsrfCookie = async (): Promise<void> => {
+  if (csrfPromise) return csrfPromise;
+
+  csrfPromise = axios.get(`${BACKEND_URL}/sanctum/csrf-cookie`, {
+    withCredentials: true,
+    withXSRFToken: true,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    xsrfCookieName: "XSRF-TOKEN",
+    xsrfHeaderName: "X-XSRF-TOKEN",
+  }).then(() => {
+    csrfPromise = null;
+  }).catch(() => {
+    csrfPromise = null;
+  });
+
+  return csrfPromise;
+};
 
 export default {
-  async getCsrfCookie() {
-    return axios.get(`${BACKEND_URL}/sanctum/csrf-cookie`, {
-      withCredentials: true,
-      withXSRFToken: true,  
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      xsrfCookieName: 'XSRF-TOKEN',
-      xsrfHeaderName: 'X-XSRF-TOKEN',
-    });
-  },
+  getCsrfCookie,
 
   async register(data: RegisterForm) {
-    await this.getCsrfCookie();
+    await getCsrfCookie();
     return api.post("/register", data);
   },
 
-  async login(credentials: LoginForm) { 
-    await this.getCsrfCookie();
+  async login(credentials: LoginForm) {
+    await getCsrfCookie();
     return api.post(`/login`, credentials);
   },
 
-  async logout() { 
+  async logout() {
     return api.post(`/logout`);
   },
 
   async getUser() {
-    await this.getCsrfCookie();
     return api.get("/user");
   },
 

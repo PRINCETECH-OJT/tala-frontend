@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import authService from "@/services/authService";
+import { useCompanyStore } from "./company";
 import type { User, LoginForm } from "@/types";
 
 export const useAuthStore = defineStore("auth", {
@@ -45,11 +46,14 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async logout() {
-      this.resetState();
       try {
         await authService.logout();
       } catch (error) {
-        console.warn("Logout API failed, but frontend session is cleared.");
+        console.warn("Logout API failed:", error);
+      } finally {
+        const companyStore = useCompanyStore();
+        companyStore.reset();
+        this.resetState();
       }
     },
 
@@ -57,7 +61,6 @@ export const useAuthStore = defineStore("auth", {
       this.user = null;
       this.permissions = [];
       this.roles = [];
-      localStorage.removeItem("token");
     },
 
     can(permissionName: string) {

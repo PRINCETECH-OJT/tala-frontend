@@ -100,7 +100,7 @@ const data: { navMain: NavMainItem[] } = {
       items: [
         { title: "General Ledger", url: "/ledger", icon: BookOpen },
         { title: "Banking", url: "/banking", icon: CreditCard },
-        { title: "Accounts", url: "/acco unts", icon: CreditCard },
+        { title: "Accounts", url: "/accounts", icon: CreditCard },
         { title: "Tax Rates", url: "/taxes", icon: ReceiptCent },
       ],
     },
@@ -113,6 +113,8 @@ const data: { navMain: NavMainItem[] } = {
         { title: "Purchases (AP)", url: "/purchases", icon: Receipt },
         { title: "Invoices", url: "/invoices", icon: FileText },
         { title: "Bills", url: "/bills", icon: ReceiptCent },
+        { title: "Products/Services", url: "/items", icon: Briefcase }, 
+        { title: "Tax Rates", url: "/taxes", icon: ReceiptCent },
       ],
     },
     {
