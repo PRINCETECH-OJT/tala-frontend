@@ -45,6 +45,12 @@ export const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, permission: "users.manage" },
       },
       {
+        path: "roles",
+        name: "RolesAndPermissions",
+        component: () => import("@/views/admin/RolesAndPermissions.vue"),
+        meta: { permission: "users.manage" },
+      },
+      {
         path: "accounts",
         name: "ChartofAccounts",
         component: () => import("@/views/ChartofAccountsPage.vue"), 
@@ -61,6 +67,17 @@ export const routes: RouteRecordRaw[] = [
         name: "TaxManagement",
         component: () => import("@/views/TaxRatesPage.vue"),
         meta: { requiresAuth: true },
+      },
+      {
+        path: "contacts",
+        name: "Contacts",
+        component: () => import("@/views/admin/ContactPage.vue"),
+      },
+      {
+        path: "settings",
+        name: "Settings",
+        meta: { permission: "system.settings" },
+        component: () => import("@/views/admin/settings/SettingsPage.vue"),
       },
     ],
   },
