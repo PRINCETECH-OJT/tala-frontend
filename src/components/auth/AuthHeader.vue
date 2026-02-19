@@ -12,7 +12,7 @@
       />
 
       <span
-        class="font-ribeye text-lg md:text-2xl text-white tracking-widest mb-1"
+        class="text-lg md:text-2xl text-white font-ribeye tracking-widest mb-1"
       >
         T.A.L.A.
       </span>
