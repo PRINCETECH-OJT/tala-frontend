@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useCompanyStore } from "@/stores/company";
 import api from "@/services/api";
-
+import type { Contact } from "@/types";
 import {
   ContactToolbar,
   ContactHeader,
@@ -11,7 +11,7 @@ import {
 } from "@/components/contact";
 
 const companyStore = useCompanyStore();
-const contacts = ref([]);
+const contacts = ref<Contact[]>([]);
 const loading = ref(false);
 const searchQuery = ref("");
 const filterType = ref("all");
@@ -21,7 +21,7 @@ const fetchContacts = async () => {
   if (!companyStore.companyId) return;
   loading.value = true;
   try {
-    const res = await api.get(`/companies/${companyStore.companyId}/contacts`);
+    const res = await api.get(`/contacts`);
     contacts.value = res.data.data;
   } catch (error) {
     console.error("Fetch error:", error);
@@ -30,6 +30,25 @@ const fetchContacts = async () => {
   }
 };
 
+const filteredContacts = computed(() => {
+  let result = contacts.value;
+  if (filterType.value !== "all") {
+    result = result.filter(
+      (c) => c.type.toLowerCase() === filterType.value.toLowerCase(),
+    );
+  }
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    result = result.filter(
+      (c) =>
+        c.contact_name?.toLowerCase().includes(query) ||
+        c.person_name?.toLowerCase().includes(query) ||
+        c.email?.toLowerCase().includes(query),
+    );
+  }
+
+  return result;
+});
 onMounted(fetchContacts);
 </script>
 
@@ -40,13 +59,11 @@ onMounted(fetchContacts);
     <ContactToolbar v-model:search="searchQuery" v-model:filter="filterType" />
 
     <ContactTable
-      :contacts="contacts"
+      :contacts="filteredContacts"
       :loading="loading"
-      :search="searchQuery"
-      :filter="filterType"
       @refresh="fetchContacts"
     />
 
-    <ContactModal v-model:open="isModalOpen" @saved="fetchContacts" />
+    <ContactDialog v-model:open="isModalOpen" @saved="fetchContacts" />
   </div>
 </template>

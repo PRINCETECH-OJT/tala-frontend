@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 
 const props = defineProps(["search", "filter"]);
 const emit = defineEmits(["update:search", "update:filter"]);
+
+const filterTabs = ["all", "customer", "vendor", "archive", "groups", "other"];
 </script>
 
 <template>
@@ -12,14 +14,14 @@ const emit = defineEmits(["update:search", "update:filter"]);
   >
     <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
       <button
-        v-for="type in ['all', 'customer', 'vendor']"
+        v-for="type in filterTabs"
         :key="type"
         @click="emit('update:filter', type)"
         :class="[
           'px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-all',
           filter === type
             ? 'bg-white text-blue-900 shadow-sm'
-            : 'text-slate-500',
+            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50',
         ]"
       >
         {{ type }}
@@ -36,7 +38,7 @@ const emit = defineEmits(["update:search", "update:filter"]);
           emit('update:search', ($event.target as HTMLInputElement).value)
         "
         placeholder="Search name or email..."
-        class="pl-10 bg-slate-50 border-slate-200"
+        class="pl-10 bg-slate-50 border-slate-200 focus:bg-white"
       />
     </div>
   </div>

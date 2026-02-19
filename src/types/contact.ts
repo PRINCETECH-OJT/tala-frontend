@@ -13,7 +13,7 @@ export interface Contact {
   id: number;
   uuid: string;
   company_id: number;
-  type: "customer" | "vendor";
+  type: string;
   contact_name: string;
   person_name?: string;
   email?: string;
