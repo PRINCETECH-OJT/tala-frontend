@@ -41,11 +41,11 @@ import {
   ChevronRight,
   ReceiptCent,
   LogOut,
+  Calendar
 } from "lucide-vue-next";
 
 const props = defineProps<SidebarProps>();
-const router = useRouter();
-const route = useRoute();
+const router = useRouter(); 
 const authStore = useAuthStore();
 const companyStore = useCompanyStore();
 
@@ -53,6 +53,7 @@ const userName = computed(() => authStore.user?.name || "Guest User");
 
 const userRole = computed(() => {
   const roles = authStore.user?.roles;
+ 
   if (!roles?.length) return "User";
   // Logic to capitalize the first role found
   const role = roles[0];
@@ -102,19 +103,19 @@ const data: { navMain: NavMainItem[] } = {
         { title: "Banking", url: "/banking", icon: CreditCard },
         { title: "Accounts", url: "/accounts", icon: CreditCard },
         { title: "Tax Rates", url: "/taxes", icon: ReceiptCent },
+        { title: "Products/Services", url: "/items", icon: Briefcase }, 
       ],
     },
     {
       title: "Operations",
       icon: Briefcase,
       items: [
+        { title: "Periods", url: "/fiscal-periods", icon: Calendar },
         { title: "Contacts", url: "/contacts", icon: Landmark },
         { title: "Sales (AR)", url: "/sales", icon: CreditCard },
         { title: "Purchases (AP)", url: "/purchases", icon: Receipt },
         { title: "Invoices", url: "/invoices", icon: FileText },
-        { title: "Bills", url: "/bills", icon: ReceiptCent },
-        { title: "Products/Services", url: "/items", icon: Briefcase }, 
-        { title: "Tax Rates", url: "/taxes", icon: ReceiptCent },
+        { title: "Bills", url: "/bills", icon: ReceiptCent }, 
       ],
     },
     {
