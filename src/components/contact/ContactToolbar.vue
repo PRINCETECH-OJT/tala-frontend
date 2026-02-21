@@ -1,11 +1,17 @@
 <script setup lang="ts">
+import { computed } from "vue"; // 1. Import computed
 import { Search } from "lucide-vue-next";
 import { Input } from "@/components/ui/input";
 
 const props = defineProps(["search", "filter"]);
 const emit = defineEmits(["update:search", "update:filter"]);
 
-const filterTabs = ["all", "customer", "vendor", "archive", "groups", "other"];
+const filterTabs = ["all", "customer", "vendor", "archive", "groups"];
+
+const searchValue = computed({
+  get: () => props.search,
+  set: (value) => emit("update:search", value),
+});
 </script>
 
 <template>
@@ -33,10 +39,7 @@ const filterTabs = ["all", "customer", "vendor", "archive", "groups", "other"];
         class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
       />
       <Input
-        :value="search"
-        @input="
-          emit('update:search', ($event.target as HTMLInputElement).value)
-        "
+        v-model="searchValue"
         placeholder="Search name or email..."
         class="pl-10 bg-slate-50 border-slate-200 focus:bg-white"
       />
