@@ -29,7 +29,7 @@ const currentInvoice = ref<Invoice | null>(null)
 const form = ref<InvoiceFormData>({
   customer_id: null,
   invoice_number: "",
-  issue_date: new Date().toISOString().split("T")[0],
+  issue_date: new Date().toISOString().split("T")[0]!,
   due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
   discount_amount: 0,
   status: "draft",
@@ -202,9 +202,8 @@ const removeItem = (index: number) => {
 
 const selectItem = (index: number) => {
   const item = form.value.items[index]
-  const realItem = items.value.find(i => i.id === item?.item_id)
-  console.log("Selected item:", realItem?.name)
-  if (realItem) {
+  const realItem = items.value.find(i => i.id === item?.item_id) 
+  if (item && realItem) {
     item.item = realItem
     item.unit_price = realItem.sales_price || 0
   }
@@ -367,6 +366,33 @@ const formatDateTime = (date: Date | null) => {
   })
 }
 
+function toDateInputValue(date: Date): string {
+  const d = new Date(date)
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+  return d.toISOString().slice(0, 10)
+}
+
+function setDueDays(days: number) {
+  const base = form.value.issue_date
+    ? new Date(form.value.issue_date)
+    : new Date()
+
+  base.setDate(base.getDate() + days)
+  form.value.due_date = toDateInputValue(base)
+}
+
+function setFirstNextMonth() {
+  const d = new Date()
+  const next = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+  form.value.due_date = toDateInputValue(next)
+}
+
+function setEndNextMonth() {
+  const d = new Date()
+  const end = new Date(d.getFullYear(), d.getMonth() + 2, 0)
+  form.value.due_date = toDateInputValue(end)
+}
+
 /* -----------------------------
    LIFECYCLE
 ------------------------------ */
@@ -492,12 +518,49 @@ onMounted(async () => {
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Due Date</label>
-              <input
-                v-model="form.due_date"
-                type="date"
-                class="w-full border rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Due Date
+              </label>
+
+              <div class="flex gap-2 items-start">
+                <!-- Date Picker -->
+                <input
+                  v-model="form.due_date"
+                  type="date"
+                  class="flex-1 border rounded-lg px-3 py-2
+                        bg-white dark:bg-slate-700
+                        text-gray-900 dark:text-white
+                        border-gray-300 dark:border-gray-600
+                        focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+
+                <!-- Quick Options -->
+                <div class="flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    class="preset-btn"
+                    @click="setDueDays(7)"
+                  >+7d</button>
+
+                  <button
+                    type="button"
+                    class="preset-btn"
+                    @click="setDueDays(14)"
+                  >+14d</button>
+
+                  <button
+                    type="button"
+                    class="preset-btn"
+                    @click="setFirstNextMonth"
+                  >1st next</button>
+
+                  <button
+                    type="button"
+                    class="preset-btn"
+                    @click="setEndNextMonth"
+                  >End next</button>
+                </div>
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
@@ -757,4 +820,4 @@ onMounted(async () => {
       </div>
     </div>
   </div>
-</template>
+</template> 

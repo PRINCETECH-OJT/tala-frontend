@@ -40,8 +40,7 @@ const fetchInvoices = async () => {
 const fetchStatistics = async () => {
   try {
     loadingStats.value = true
-    const data = await invoiceService.getStatistics(companyId.value)
-    console.log("Fetched invoice statistics:", data)
+    const data = await invoiceService.getStatistics(companyId.value) 
     statistics.value = data
   } catch (err) {
     console.error("Failed to load statistics:", err)
