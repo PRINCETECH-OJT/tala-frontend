@@ -63,6 +63,7 @@ export interface InvoiceJournalEntry {
   id: number
   uuid: string
   entry_number: string
+  reference_number: string
   description: string
   entry_date: string
   posted: boolean
@@ -148,9 +149,7 @@ export interface InvoiceFormData {
   customer_id: number | null
   invoice_number?: string
   issue_date: string | null
-  due_date: string | null
-  discount_amount: number
-  status: 'draft' | 'sent' | 'paid' | 'overdue'
+  due_date: string | null 
   notes: string
   items: InvoiceFormItem[]
   invoice_taxes: {

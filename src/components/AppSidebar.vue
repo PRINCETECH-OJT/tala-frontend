@@ -92,6 +92,7 @@ const data: { navMain: NavMainItem[] } = {
       isActive: true,
       items: [
         { title: "Dashboard", url: "/dashboard", icon: PieChart },
+        { title: "Contacts", url: "/contacts", icon: Landmark },
         { title: "Reports", url: "/reports", icon: FileText },
       ],
     },
@@ -103,19 +104,18 @@ const data: { navMain: NavMainItem[] } = {
         { title: "Banking", url: "/banking", icon: CreditCard },
         { title: "Accounts", url: "/accounts", icon: CreditCard },
         { title: "Tax Rates", url: "/taxes", icon: ReceiptCent },
-        { title: "Products/Services", url: "/items", icon: Briefcase }, 
+        { title: "Products & Services", url: "/items", icon: Briefcase }, 
       ],
     },
     {
       title: "Operations",
       icon: Briefcase,
       items: [
-        { title: "Periods", url: "/fiscal-periods", icon: Calendar },
-        { title: "Contacts", url: "/contacts", icon: Landmark },
-        { title: "Sales (AR)", url: "/sales", icon: CreditCard },
-        { title: "Purchases (AP)", url: "/purchases", icon: Receipt },
+        { title: "Fiscal Periods", url: "/fiscal-periods", icon: Calendar },
         { title: "Invoices", url: "/invoices", icon: FileText },
+        { title: "Sales Quotes", url: "/quotes", icon: CreditCard },
         { title: "Bills", url: "/bills", icon: ReceiptCent }, 
+        { title: "Purchases Orders", url: "/orders", icon: Receipt },
       ],
     },
     {

@@ -5,22 +5,22 @@ const BASE_URL = (companyUuid: string) => `/companies/${companyUuid}/invoices`
 
 export default {
   async getAll(companyUuid: string) {
-    const response = await api.get<Invoice[]>(BASE_URL(companyUuid))
+    const response = await api.get(BASE_URL(companyUuid))
     return response.data.data ?? response.data
   },
 
   async get(uuid: string) {
-    const response = await api.get<Invoice>(`/invoices/${uuid}`)
+    const response = await api.get(`/invoices/${uuid}`)
     return response.data.data ?? response.data
   },
 
   async create(companyUuid: string, data: Partial<InvoiceFormData>) {
-    const response = await api.post<Invoice>(BASE_URL(companyUuid), data)
+    const response = await api.post(BASE_URL(companyUuid), data)
     return response.data.data ?? response.data
   },
 
   async update(uuid: string, data: Partial<InvoiceFormData>) {
-    const response = await api.put<Invoice>(`/invoices/${uuid}`, data)
+    const response = await api.put(`/invoices/${uuid}`, data)
     return response.data.data ?? response.data
   },
 
@@ -29,17 +29,17 @@ export default {
   },
 
   async post(uuid: string) {
-    const response = await api.post<Invoice>(`/invoices/${uuid}/post`, {}) 
+    const response = await api.post(`/invoices/${uuid}/post`, {}) 
     return response.data.data ?? response.data
   },
 
   async markAsPaid(uuid: string) {
-    const response = await api.post<Invoice>(`/invoices/${uuid}/mark-as-paid`, {}) 
+    const response = await api.post(`/invoices/${uuid}/mark-as-paid`, {}) 
     return response.data.data ?? response.data
   },
 
   async getStatistics(companyUuid: string) {
-    const response = await api.get<InvoiceStatistics>(`${BASE_URL(companyUuid)}/statistics`) 
+    const response = await api.get(`${BASE_URL(companyUuid)}/statistics`) 
     return response.data.data ?? response.data
   },
 }
