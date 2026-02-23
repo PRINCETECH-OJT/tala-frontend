@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue"
+import { onMounted, ref, computed, watch } from "vue"
 import { useRoute } from "vue-router"
 import type { Account, Item, ItemFormData } from '@/types';
 import api from "@/services/api"  
@@ -72,11 +72,13 @@ const form = ref<ItemFormData>({
   name: "", 
   type: "",
   description: "",
+  is_sale: true,
+  is_purchase: false,
   sales_price: 0,
   cost_price: 0,
   taxable: true,
   is_inventory: false,
-  quantity: 0,
+  quantity_on_hand: 0,
   income_account_id: "",
   expense_account_id: "",
   inventory_account_id: null, 
@@ -84,6 +86,39 @@ const form = ref<ItemFormData>({
 })
 
 const formErrors = ref<Record<string, string[]>>({}) 
+
+// Watch for type changes to reset inventory-related fields
+watch(() => form.value.type, (newType) => {
+  if (newType === 'service') {
+    form.value.is_inventory = false
+    form.value.inventory_account_id = null
+    form.value.quantity_on_hand = 0
+  }
+})
+
+// Watch for is_inventory changes to reset related fields
+watch(() => form.value.is_inventory, (newValue) => {
+  if (!newValue) {
+    form.value.inventory_account_id = null
+    form.value.quantity_on_hand = 0
+  }
+})
+
+// Watch for is_sale changes to reset income account if unchecked
+watch(() => form.value.is_sale, (newValue) => {
+  if (!newValue) {
+    form.value.income_account_id = ""
+    form.value.sales_price = 0
+  }
+})
+
+// Watch for is_purchase changes to reset expense account if unchecked
+watch(() => form.value.is_purchase, (newValue) => {
+  if (!newValue) {
+    form.value.expense_account_id = ""
+    form.value.cost_price = 0
+  }
+})
 
 const openCreateModal = async () => {
   modalMode.value = "create"
@@ -95,11 +130,13 @@ const openCreateModal = async () => {
     name: "", 
     type: "",
     description: "",
+    is_sale: true,
+    is_purchase: false,
     sales_price: 0,
     cost_price: 0,
     taxable: true,
     is_inventory: false,
-    quantity: 0,
+    quantity_on_hand: 0,
     income_account_id: "",
     expense_account_id: "",
     inventory_account_id: null, 
@@ -122,11 +159,13 @@ const openEditModal = async (item: Item) => {
     name: item.name,
     type: item.type,
     description: item.description ?? "",
+    is_sale: item.is_sale ?? true,
+    is_purchase: item.is_purchase ?? false,
     sales_price: item.sales_price ?? 0,
     cost_price: item.cost_price ?? 0,
     taxable: item.taxable ?? true,
     is_inventory: item.is_inventory ?? false,
-    quantity: item.quantity ?? 0,
+    quantity_on_hand: item.quantity ?? 0,
     income_account_id: item.income_account?.id ?? "",
     expense_account_id: item.expense_account?.id ?? "",
     inventory_account_id: item.inventory_account?.id ?? null,
@@ -171,6 +210,9 @@ const inventoryAccounts = computed(() =>
     (acc) => acc.is_active && acc.account_type?.category === "asset"
   )
 )
+
+// Check if at least one usage is selected
+const hasUsageSelected = computed(() => form.value.is_sale || form.value.is_purchase)
 
 const closeModal = () => {
   showModal.value = false
@@ -433,7 +475,7 @@ onMounted(fetchItems)
                   </button>
 
                   <!-- Edit Button -->
-                  <button
+                  <!-- <button
                     @click="openEditModal(item)"
                     :disabled="!item.is_inventory"
                     :class="!item.is_inventory 
@@ -441,6 +483,11 @@ onMounted(fetchItems)
                       : 'hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'"
                     class="p-1.5 text-gray-600 dark:text-gray-400 rounded transition-colors"
                     :title="!item.is_inventory ? 'Non-inventory items cannot be edited' : 'Edit Item'"
+                  > --> 
+                  <button
+                    @click="openEditModal(item)"  
+                    class="p-1.5 text-gray-600 dark:text-gray-400 rounded transition-colors hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                    title="Edit Item"
                   >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -500,20 +547,40 @@ onMounted(fetchItems)
 
         <!-- Modal Body -->
         <div class="px-6 py-4 space-y-4">
+          <!-- Warning: No Usage Selected -->
+          <div v-if="!hasUsageSelected" class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+            <div class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p class="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                  Please select at least one usage
+                </p>
+                <p class="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
+                  Items must be used for sales, purchases, or both.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <!-- SKU -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              SKU <span class="text-red-500">*</span>
+              SKU
             </label>
             <input
               v-model="form.sku"
               type="text"
-              placeholder="e.g., ITEM-001"
+              placeholder="Leave blank to auto-generate"
               class="w-full border rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
               :class="{ 'border-red-500': formErrors.sku }"
             />
             <p v-if="formErrors.sku" class="mt-1 text-sm text-red-600 dark:text-red-400">
               {{ formErrors.sku[0] }}
+            </p>
+            <p v-else class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Optional. Will be auto-generated if left blank.
             </p>
           </div>
 
@@ -553,6 +620,43 @@ onMounted(fetchItems)
             </p>
           </div>
 
+          <!-- Usage Flags -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Usage <span class="text-red-500">*</span>
+            </label>
+            <div class="flex flex-wrap gap-6">
+              <div class="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  v-model="form.is_sale"
+                  id="is_sale"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label for="is_sale" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                  Used for sales
+                </label>
+              </div>
+              <div class="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  v-model="form.is_purchase"
+                  id="is_purchase"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label for="is_purchase" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                  Used for purchases
+                </label>
+              </div>
+            </div>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Select at least one. This determines which accounts and prices are required.
+            </p>
+            <p v-if="formErrors.is_sale" class="mt-1 text-sm text-red-600 dark:text-red-400">
+              {{ formErrors.is_sale[0] }}
+            </p>
+          </div>
+
           <!-- Description -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -568,7 +672,7 @@ onMounted(fetchItems)
 
           <!-- Sales Price & Cost Price -->
           <div class="grid grid-cols-2 gap-4">
-            <div>
+            <div v-if="form.is_sale">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Sales Price <span class="text-red-500">*</span>
               </label>
@@ -585,9 +689,9 @@ onMounted(fetchItems)
                 {{ formErrors.sales_price[0] }}
               </p>
             </div>
-            <div>
+            <div v-if="form.is_purchase">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Cost Price
+                Cost Price <span class="text-red-500">*</span>
               </label>
               <input
                 v-model.number="form.cost_price"
@@ -617,7 +721,7 @@ onMounted(fetchItems)
                 Taxable
               </label>
             </div>
-            <div class="flex items-center gap-3">
+            <div v-if="form.type === 'product'" class="flex items-center gap-3">
               <input
                 type="checkbox"
                 v-model="form.is_inventory"
@@ -629,27 +733,30 @@ onMounted(fetchItems)
               </label>
             </div>
           </div>
+          <p v-if="form.type === 'service'" class="text-xs text-gray-500 dark:text-gray-400 -mt-2">
+            Service items cannot track inventory
+          </p>
 
           <!-- Quantity (when tracking inventory) -->
-          <div v-if="form.is_inventory">
+          <div v-if="form.type === 'product' && form.is_inventory">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Quantity on hand
             </label>
             <input
-              v-model.number="form.quantity"
+              v-model.number="form.quantity_on_hand"
               type="number"
               min="0"
               step="1"
               class="w-full border rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              :class="{ 'border-red-500': formErrors.quantity }"
+              :class="{ 'border-red-500': formErrors.quantity_on_hand }"
             />
-            <p v-if="formErrors.quantity" class="mt-1 text-sm text-red-600 dark:text-red-400">
-              {{ formErrors.quantity[0] }}
+            <p v-if="formErrors.quantity_on_hand" class="mt-1 text-sm text-red-600 dark:text-red-400">
+              {{ formErrors.quantity_on_hand[0] }}
             </p>
           </div>
 
           <!-- Income Account -->
-          <div>
+          <div v-if="form.is_sale">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Income Account <span class="text-red-500">*</span>
             </label>
@@ -674,7 +781,7 @@ onMounted(fetchItems)
           </div>
 
           <!-- Expense Account -->
-          <div>
+          <div v-if="form.is_purchase">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Expense Account <span class="text-red-500">*</span>
             </label>
@@ -699,16 +806,17 @@ onMounted(fetchItems)
           </div>
 
           <!-- Inventory Account (when tracking inventory) -->
-          <div v-if="form.is_inventory">
+          <div v-if="form.type === 'product' && form.is_inventory">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Inventory Account
+              Inventory Account <span class="text-red-500">*</span>
             </label>
             <select
               v-model="form.inventory_account_id"
               class="w-full border rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              :class="{ 'border-red-500': formErrors.inventory_account_id }"
               :disabled="loadingAccounts"
             >
-              <option :value="null">None</option>
+              <option :value="null">Select inventory account</option>
               <option
                 v-for="acc in inventoryAccounts"
                 :key="acc.uuid"

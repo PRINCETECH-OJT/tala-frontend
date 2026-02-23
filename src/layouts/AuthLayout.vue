@@ -26,3 +26,6 @@ import AuthFooter from "@/components/auth/AuthFooter.vue";
     <AuthFooter />
   </div>
 </template>
+
+<style scoped> 
+</style>
