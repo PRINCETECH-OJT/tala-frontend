@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
-import type { Invoice, InvoiceStatistics } from "@/types"
+import type { Bill, BillStatistics } from "@/types"
 import api from "@/services/api"
-import invoiceService from "@/services/invoiceService"
+import { billService } from "@/services" 
 
 const route = useRoute()
 const router = useRouter()
@@ -12,8 +12,8 @@ const companyId = computed(() => route.params.companyId as string)
 /* -----------------------------
    STATE
 ------------------------------ */
-const invoices = ref<Invoice[]>([])
-const statistics = ref<InvoiceStatistics | null>(null)
+const bills = ref<Bill[]>([])
+const statistics = ref<BillStatistics | null>(null)
 const loading = ref(false)
 const loadingStats = ref(false)
 const error = ref<string | null>(null)
@@ -21,12 +21,12 @@ const error = ref<string | null>(null)
 const currentPage = ref(1)
 const perPage = ref(10)
 const totalPages = ref(1)
-const totalInvoices = ref(0)
+const totalBills = ref(0)
 
 // Filter states - these will be sent to backend
 const searchQuery = ref("")
 const filterStatus = ref("")
-const filterCustomer = ref("")
+const filterVendor = ref("")
 const filterDateRange = ref<{ start: string; end: string } | null>(null)
 
 // Debounce timeout
@@ -35,7 +35,7 @@ const searchTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 /* -----------------------------
    FETCH WITH BACKEND FILTERS
 ------------------------------ */
-const fetchInvoices = async () => {
+const fetchBills = async () => {
   try {
     loading.value = true
     error.value = null
@@ -53,27 +53,27 @@ const fetchInvoices = async () => {
       params.status = filterStatus.value
     }
  
-    if (filterCustomer.value) {
-      params.customer = filterCustomer.value
+    if (filterVendor.value) {
+      params.vendor = filterVendor.value
     }
  
     if (filterDateRange.value) {
       params.date_range = filterDateRange.value
     }
  
-    const response = await api.get(`/companies/${companyId.value}/invoices`, {
+    const response = await api.get(`/companies/${companyId.value}/bills`, {
       params,
     })
 
     const data = response.data  
-    invoices.value = data.data
+    bills.value = data.data
     currentPage.value = data.pagination.current_page
     totalPages.value = data.pagination.last_page
-    totalInvoices.value = data.pagination.total
+    totalBills.value = data.pagination.total
     perPage.value = data.pagination.per_page
   } catch (err: unknown) {
     const e = err as { response?: { data?: { message?: string } } }
-    error.value = e.response?.data?.message || "Failed to load invoices"
+    error.value = e.response?.data?.message || "Failed to load bills"
     console.error(err)
   } finally {
     loading.value = false
@@ -83,7 +83,7 @@ const fetchInvoices = async () => {
 const fetchStatistics = async () => {
   try {
     loadingStats.value = true
-    const data = await invoiceService.getStatistics(companyId.value)
+    const data = await billService.getStatistics(companyId.value)
     statistics.value = data
   } catch (err) {
     console.error("Failed to load statistics:", err)
@@ -101,56 +101,56 @@ watch(searchQuery, () => {
     clearTimeout(searchTimeout.value)
   }
   searchTimeout.value = setTimeout(() => {
-    fetchInvoices()
+    fetchBills()
   }, 500) // 500ms debounce
 })
 
 // Immediate filter on status/customer/date change
-watch([searchQuery, filterStatus, filterCustomer, filterDateRange], () => {
+watch([searchQuery, filterStatus, filterVendor, filterDateRange], () => {
   currentPage.value = 1
-  fetchInvoices()
+  fetchBills()
 })
 
 /* -----------------------------
    COMPUTED
 ------------------------------ */
 // No frontend filtering needed - backend handles it all
-const displayedInvoices = computed(() => {
-  return Array.isArray(invoices.value) ? invoices.value : []
+const displayedBills = computed(() => {
+  return Array.isArray(bills.value) ? bills.value : []
 })
 
 /* -----------------------------
    ACTIONS
 ------------------------------ */
-const viewInvoice = (invoice: Invoice) => {
-  router.push(`/app/${companyId.value}/invoices/${invoice.uuid}`)
+const viewBill = (bill: Bill) => {
+  router.push(`/app/${companyId.value}/bills/${bill.uuid}`)
 }
 
-const createInvoice = () => {
-  router.push(`/app/${companyId.value}/invoices/new`)
+const createBill = () => {
+  router.push(`/app/${companyId.value}/bills/new`)
 }
 
-const postInvoice = async (invoice: Invoice, event: Event) => {
+const approveBill = async (bill: Bill, event: Event) => {
   event.stopPropagation()
-  if (!confirm(`Post invoice ${invoice.invoice_number}? This will create journal entries.`)) return
+  if (!confirm(`Post bill ${bill.bill_number}? This will create journal entries.`)) return
 
   try {
-    await invoiceService.post(invoice.uuid)
-    await fetchInvoices()
+    await billService.approve(bill.uuid)
+    await fetchBills()
     await fetchStatistics()
   } catch (err: unknown) {
     const e = err as { response?: { data?: { message?: string } } }
-    alert(e.response?.data?.message || "Failed to post invoice")
+    alert(e.response?.data?.message || "Failed to approve bill")
   }
 }
 
-const markAsPaid = async (invoice: Invoice, event: Event) => {
+const markAsPaid = async (bill: Bill, event: Event) => {
   event.stopPropagation()
-  if (!confirm(`Mark invoice ${invoice.invoice_number} as paid?`)) return
+  if (!confirm(`Mark bill ${bill.bill_number} as paid?`)) return
 
   try {
-    await invoiceService.markAsPaid(invoice.uuid)
-    await fetchInvoices()
+    await billService.markAsPaid(bill.uuid)
+    await fetchBills()
     await fetchStatistics()
   } catch (err: unknown) {
     const e = err as { response?: { data?: { message?: string } } }
@@ -158,26 +158,26 @@ const markAsPaid = async (invoice: Invoice, event: Event) => {
   }
 }
 
-const deleteInvoice = async (invoice: Invoice, event: Event) => {
+const deleteBill = async (bill: Bill, event: Event) => {
   event.stopPropagation()
-  if (!confirm(`Delete invoice ${invoice.invoice_number}? This cannot be undone.`)) return
+  if (!confirm(`Delete bill ${bill.bill_number}? This cannot be undone.`)) return
 
   try {
-    await invoiceService.delete(invoice.uuid)
-    await fetchInvoices()
+    await billService.delete(bill.uuid)
+    await fetchBills()
     await fetchStatistics()
   } catch (err: unknown) {
     const e = err as { response?: { data?: { message?: string } } }
-    alert(e.response?.data?.message || "Failed to delete invoice")
+    alert(e.response?.data?.message || "Failed to delete bill")
   }
 }
  
 const clearFilters = () => {
   searchQuery.value = ""
   filterStatus.value = ""
-  filterCustomer.value = ""
+  filterVendor.value = ""
   filterDateRange.value = null
-  // fetchInvoices will be called automatically by watchers
+  // fetchBills will be called automatically by watchers
 }
  
 const quickFilterStatus = (status: string) => {
@@ -187,28 +187,28 @@ const quickFilterStatus = (status: string) => {
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
-    fetchInvoices()
+    fetchBills()
   }
 }
 
 const nextPage = () => {
   if (currentPage.value < totalPages.value) {
     currentPage.value++
-    fetchInvoices()
+    fetchBills()
   }
 }
 
 const prevPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--
-    fetchInvoices()
+    fetchBills()
   }
 }
 
 const changePerPage = (newPerPage: number) => {
   perPage.value = newPerPage
   currentPage.value = 1 // Reset to first page
-  fetchInvoices()
+  fetchBills()
 }
 
 /* -----------------------------
@@ -236,7 +236,7 @@ const getStatusClass = (status: string) => {
   switch (status) {
     case "draft":
       return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-    case "sent":
+    case "pending":
       return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
     case "paid":
       return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
@@ -257,7 +257,7 @@ const getStatusLabel = (status: string) => {
    LIFECYCLE
 ------------------------------ */
 onMounted(() => {
-  fetchInvoices()
+  fetchBills()
   fetchStatistics()
 })
 </script>
@@ -267,19 +267,19 @@ onMounted(() => {
     <!-- Header -->
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Invoices</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Bills</h1>
         <p class="text-sm text-gray-600 dark:text-gray-400">
-          Manage your company's invoices
+          Manage your company's bills
         </p>
       </div>
       <button
-        @click="createInvoice"
+        @click="createBill"
         class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition-colors flex items-center gap-2"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
-        Create Invoice
+        Create Bill
       </button>
     </div>
 
@@ -290,8 +290,8 @@ onMounted(() => {
         class="bg-white dark:bg-slate-800 rounded-xl shadow border p-4 cursor-pointer hover:border-blue-500 transition-colors"
         :class="filterStatus === '' ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900' : ''"
       >
-        <p class="text-sm text-gray-500 dark:text-gray-400">Total Invoices</p>
-        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ statistics.total_invoices }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Total Bills</p>
+        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ statistics.total_bills }}</p>
       </div>
 
       <div
@@ -300,16 +300,16 @@ onMounted(() => {
         :class="filterStatus === 'draft' ? 'border-gray-500 ring-2 ring-gray-200 dark:ring-gray-700' : ''"
       >
         <p class="text-sm text-gray-500 dark:text-gray-400">Draft</p>
-        <p class="text-2xl font-bold text-gray-600 dark:text-gray-300">{{ statistics.draft_invoices }}</p>
+        <p class="text-2xl font-bold text-gray-600 dark:text-gray-300">{{ statistics.draft_bills }}</p>
       </div>
 
       <div
-        @click="quickFilterStatus('sent')"
+        @click="quickFilterStatus('pending')"
         class="bg-white dark:bg-slate-800 rounded-xl shadow border p-4 cursor-pointer hover:border-blue-500 transition-colors"
-        :class="filterStatus === 'sent' ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900' : ''"
+        :class="filterStatus === 'pending' ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900' : ''"
       >
-        <p class="text-sm text-gray-500 dark:text-gray-400">Sent</p>
-        <p class="text-2xl font-bold text-blue-600">{{ statistics.sent_invoices }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Pending</p>
+        <p class="text-2xl font-bold text-blue-600">{{ statistics.pending_bills }}</p>
       </div>
 
       <div
@@ -318,7 +318,7 @@ onMounted(() => {
         :class="filterStatus === 'paid' ? 'border-green-500 ring-2 ring-green-200 dark:ring-green-900' : ''"
       >
         <p class="text-sm text-gray-500 dark:text-gray-400">Paid</p>
-        <p class="text-2xl font-bold text-green-600">{{ statistics.paid_invoices }}</p>
+        <p class="text-2xl font-bold text-green-600">{{ statistics.paid_bills }}</p>
       </div>
 
       <div
@@ -327,17 +327,17 @@ onMounted(() => {
         :class="filterStatus === 'overdue' ? 'border-red-500 ring-2 ring-red-200 dark:ring-red-900' : ''"
       >
         <p class="text-sm text-gray-500 dark:text-gray-400">Overdue</p>
-        <p class="text-2xl font-bold text-red-600">{{ statistics.overdue_invoices }}</p>
+        <p class="text-2xl font-bold text-red-600">{{ statistics.overdue_bills }}</p>
       </div>
 
       <div class="bg-white dark:bg-slate-800 rounded-xl shadow border p-4">
         <p class="text-sm text-gray-500 dark:text-gray-400">Total Unpaid</p>
-        <p class="text-xl font-bold text-gray-500">{{ statistics.unpaid_invoices }}</p>
+        <p class="text-xl font-bold text-gray-500">{{ statistics.unpaid_bills }}</p>
       </div>
 
       <div class="bg-white dark:bg-slate-800 rounded-xl shadow border p-4">
-        <p class="text-sm text-gray-500 dark:text-gray-400">Total Revenue</p>
-        <p class="text-xl font-bold text-blue-600">{{ formatCurrency(statistics.total_revenue) }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Total Expense</p>
+        <p class="text-xl font-bold text-blue-600">{{ formatCurrency(statistics.total_expense) }}</p>
       </div>
 
       <div class="bg-white dark:bg-slate-800 rounded-xl shadow border p-4">
@@ -359,7 +359,7 @@ onMounted(() => {
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Filters</h2>
         <button
-          v-if="searchQuery || filterStatus || filterCustomer || filterDateRange"
+          v-if="searchQuery || filterStatus || filterVendor || filterDateRange"
           @click="clearFilters"
           class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
         >
@@ -376,11 +376,11 @@ onMounted(() => {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Invoice #, notes..."
+            placeholder="Bill #, notes..."
             class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {{ searchQuery ? 'Searching on backend...' : 'Start typing to search' }}
+            {{ searchQuery ? 'Searching...' : 'Start typing to search' }}
           </p>
         </div>
 
@@ -395,7 +395,7 @@ onMounted(() => {
           >
             <option value="">All Statuses</option>
             <option value="draft">Draft</option>
-            <option value="sent">Sent</option>
+            <option value="pending">Pending</option>
             <option value="paid">Paid</option>
             <option value="overdue">Overdue</option>
             <option value="cancelled">Cancelled</option>
@@ -418,16 +418,16 @@ onMounted(() => {
       <!-- Loading -->
       <div v-if="loading" class="p-8 text-center">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Loading invoices...</p>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Loading bills...</p>
       </div>
 
       <!-- No Results -->
-      <div v-else-if="displayedInvoices.length === 0" class="p-8 text-center">
+      <div v-else-if="displayedBills.length === 0" class="p-8 text-center">
         <svg class="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <p class="text-gray-600 dark:text-gray-400 mb-2">
-          {{ searchQuery || filterStatus ? 'No invoices match your filters' : 'No invoices found' }}
+          {{ searchQuery || filterStatus ? 'No bills match your filters' : 'No bills found' }}
         </p>
         <button
           v-if="searchQuery || filterStatus"
@@ -438,10 +438,10 @@ onMounted(() => {
         </button>
         <button
           v-else
-          @click="createInvoice"
+          @click="createBill"
           class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
         >
-          Create your first invoice
+          Create your first bill
         </button>
       </div>
 
@@ -450,8 +450,8 @@ onMounted(() => {
         <table class="min-w-full text-sm">
           <thead class="bg-gray-50 dark:bg-slate-700 text-left">
             <tr>
-              <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Invoice #</th>
-              <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Customer</th>
+              <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Bill #</th>
+              <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Vendor</th>
               <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Issue Date</th>
               <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Due Date</th>
               <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Amount</th>
@@ -462,62 +462,62 @@ onMounted(() => {
 
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <tr
-              v-for="invoice in displayedInvoices"
-              :key="invoice.uuid"
-              @click="viewInvoice(invoice)"
+              v-for="bill in displayedBills"
+              :key="bill.uuid"
+              @click="viewBill(bill)"
               class="hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors"
             >
               <td class="px-4 py-3">
-                <div class="font-medium text-gray-900 dark:text-white">{{ invoice.invoice_number }}</div>
+                <div class="font-medium text-gray-900 dark:text-white">{{ bill.bill_number }}</div>
               </td>
 
               <td class="px-4 py-3">
                 <div class="text-gray-700 dark:text-gray-300">
-                  {{ invoice.customer?.name || "No customer" }}
+                  {{ bill.vendor?.name || "No vendor" }}
                 </div>
               </td>
 
               <td class="px-4 py-3 text-gray-600 dark:text-gray-400">
-                {{ formatDate(invoice.issue_date) }}
+                {{ formatDate(bill.issue_date) }}
               </td>
 
               <td class="px-4 py-3 text-gray-600 dark:text-gray-400">
-                {{ formatDate(invoice.due_date) }}
+                {{ formatDate(bill.due_date) }}
               </td>
 
               <td class="px-4 py-3">
                 <div class="font-medium text-gray-900 dark:text-white">
-                  {{ formatCurrency(invoice.total_amount) }}
+                  {{ formatCurrency(bill.total_amount) }}
                 </div>
               </td>
 
               <td class="px-4 py-3">
                 <span
-                  :class="getStatusClass(invoice.status)"
+                  :class="getStatusClass(bill.status)"
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                 >
-                  {{ getStatusLabel(invoice.status) }}
+                  {{ getStatusLabel(bill.status) }}
                 </span>
               </td>
 
               <td class="px-4 py-3">
                 <div class="flex items-center justify-end gap-2">
-                  <!-- Post Button (Draft only) -->
+                  <!-- Approve Button (Draft only) -->
                   <button
-                    v-if="invoice.status === 'draft' && invoice.can_be_edited"
-                    @click="postInvoice(invoice, $event)"
+                    v-if="bill.status === 'draft' && bill.can_be_edited"
+                    @click="approveBill(bill, $event)"
                     class="p-1.5 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
-                    title="Post Invoice"
+                    title="Approve Bill"
                   >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </button>
 
-                  <!-- Mark as Paid (Sent only) -->
+                  <!-- Mark as Paid (Pending only) -->
                   <button
-                    v-if="invoice.status === 'sent'"
-                    @click="markAsPaid(invoice, $event)"
+                    v-if="bill.status === 'pending'"
+                    @click="markAsPaid(bill, $event)"
                     class="p-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                     title="Mark as Paid"
                   >
@@ -528,7 +528,7 @@ onMounted(() => {
 
                   <!-- View/Edit -->
                   <button
-                    @click="viewInvoice(invoice)"
+                    @click="viewBill(bill)"
                     class="p-1.5 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                     title="View/Edit"
                   >
@@ -540,8 +540,8 @@ onMounted(() => {
 
                   <!-- Delete (Draft only) -->
                   <button
-                    v-if="invoice.can_be_deleted"
-                    @click="deleteInvoice(invoice, $event)"
+                    v-if="bill.can_be_deleted"
+                    @click="deleteBill(bill, $event)"
                     class="p-1.5 text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                     title="Delete"
                   >
@@ -557,10 +557,10 @@ onMounted(() => {
       </div>
 
       <!-- Results Count -->
-      <div v-if="!loading && displayedInvoices.length > 0" class="px-4 py-3 bg-gray-50 dark:bg-slate-700/50 border-t border-gray-200 dark:border-gray-700">
+      <div v-if="!loading && displayedBills.length > 0" class="px-4 py-3 bg-gray-50 dark:bg-slate-700/50 border-t border-gray-200 dark:border-gray-700">
         <p class="text-sm text-gray-600 dark:text-gray-400">
-          Showing <span class="font-medium">{{ displayedInvoices.length }}</span>
-          {{ displayedInvoices.length === 1 ? 'invoice' : 'invoices' }}
+          Showing <span class="font-medium">{{ displayedBills.length }}</span>
+          {{ displayedBills.length === 1 ? 'bill' : 'bills' }}
           {{ searchQuery || filterStatus ? 'matching your filters' : '' }}
         </p>
       </div>
@@ -578,10 +578,10 @@ onMounted(() => {
             Showing 
             <span class="font-medium">{{ ((currentPage - 1) * perPage) + 1 }}</span>
             to 
-            <span class="font-medium">{{ Math.min(currentPage * perPage, totalInvoices) }}</span>
+            <span class="font-medium">{{ Math.min(currentPage * perPage, totalBills) }}</span>
             of 
-            <span class="font-medium">{{ totalInvoices }}</span>
-            invoices
+            <span class="font-medium">{{ totalBills }}</span>
+            bills
           </p>
 
           <!-- Per Page Selector -->

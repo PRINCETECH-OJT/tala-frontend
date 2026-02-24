@@ -1,39 +1,39 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue"
 import { useRoute, useRouter } from "vue-router"
-import type { Invoice, InvoiceFormData, InvoiceItem, Contact, Item, TaxRate, InvoiceTax } from "@/types"
-import invoiceService from "@/services/invoiceService"
+import type { Bill, BillFormData, BillItem, Contact, Item, TaxRate, BillTax } from "@/types"
+import { billService } from "@/services"
 import api from "@/services/api"
 
 const route = useRoute()
 const router = useRouter()
 const companyId = computed(() => route.params.companyId as string)
-const invoiceUuid = computed(() => route.params.uuid as string)
-const isEditMode = computed(() => !!invoiceUuid.value && invoiceUuid.value !== 'new') 
+const billUuid = computed(() => route.params.uuid as string)
+const isEditMode = computed(() => !!billUuid.value && billUuid.value !== 'new') 
 
 /* -----------------------------
    STATE
 ------------------------------ */
 const loading = ref(false)
 const saving = ref(false)
-const posting = ref(false)
+const approving = ref(false)
 const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 const lastSaved = ref<Date | null>(null)
 
-const customers = ref<Contact[]>([])
+const vendors = ref<Contact[]>([])
 const items = ref<Item[]>([])
 const taxRates = ref<TaxRate[]>([])
-const currentInvoice = ref<Invoice | null>(null)
+const currentBill = ref<Bill | null>(null)
 
-const form = ref<InvoiceFormData>({
-  customer_id: null,
-  invoice_number: "",
+const form = ref<BillFormData>({
+  vendor_id: null,
+  bill_number: "",
   issue_date: new Date().toISOString().split("T")[0]!,
   due_date: "", 
   notes: "",
   items: [],
-  invoice_taxes: [],
+  bill_taxes: [],
 })
 
 const formErrors = ref<Record<string, string[]>>({})
@@ -141,22 +141,22 @@ const validateForm = (): boolean => {
   
   const errors: string[] = []
   
-  // Check if posting (status='sent') or just saving draft
-  const isSending = currentInvoice.value?.status === 'draft' && !isEditMode.value
+  // Check if approving (status='pending') or just saving draft
+  const isSending = currentBill.value?.status === 'draft' && !isEditMode.value
   
   if (isSending) {
-    if (!form.value.customer_id) {
-      errors.push('Customer is required when sending an invoice')
-      formErrors.value.customer_id = ['Customer is required']
+    if (!form.value.vendor_id) {
+      errors.push('Vendor is required when sending a bill')
+      formErrors.value.vendor_id = ['Vendor is required']
     }
     
     if (!form.value.due_date) {
-      errors.push('Due date is required when sending an invoice')
+      errors.push('Due date is required when sending a bill')
       formErrors.value.due_date = ['Due date is required']
     }
     
     if (!form.value.items || form.value.items.length === 0) {
-      errors.push('At least one item is required when sending an invoice')
+      errors.push('At least one item is required when sending a bill')
       formErrors.value.items = ['At least one item is required']
     }
   }
@@ -225,14 +225,14 @@ const lineTaxTotal = computed(() => {
   }, 0)
 })
 
-const invoiceTaxTotal = computed(() => {
+const billTaxTotal = computed(() => {
   const taxableAmount = subtotal.value - totalDiscount.value
-  return form.value.invoice_taxes.reduce((sum, tax) => {
+  return form.value.bill_taxes.reduce((sum, tax) => {
     const taxRate = taxRates.value.find(t => t.id === tax.tax_rate_id)
     if (!taxRate) return sum
     let taxable = tax.custom_taxable_amount ?? taxableAmount
     if (tax.is_compound) {
-      const previousTaxes = form.value.invoice_taxes
+      const previousTaxes = form.value.bill_taxes
         .filter(t => t.compound_order < tax.compound_order)
         .reduce((prevSum, t) => {
           const tr = taxRates.value.find(tr => tr.id === t.tax_rate_id)
@@ -244,7 +244,7 @@ const invoiceTaxTotal = computed(() => {
   }, 0)
 })
 
-const totalTax = computed(() => lineTaxTotal.value + invoiceTaxTotal.value)
+const totalTax = computed(() => lineTaxTotal.value + billTaxTotal.value)
 
 const totalAmount = computed(() => {
   return subtotal.value - totalDiscount.value + totalTax.value
@@ -253,32 +253,32 @@ const totalAmount = computed(() => {
 /* -----------------------------
    FETCH
 ------------------------------ */
-const loadCustomers = async () => {
+const loadVendors = async () => {
   try {
     const res = await api.get(`/companies/${companyId.value}/contacts`, {
-      params: { type: "customer" },
+      params: { type: "vendor" },
     })
-    customers.value = res.data.data ?? res.data
+    vendors.value = res.data.data ?? res.data
   } catch (err) {
-    console.error("Failed to load customers:", err)
+    console.error("Failed to load vendors:", err)
   }
 }
 
-const loadSalesItems = async () => {
+const loadPurchaseItems = async () => {
   try {
     const res = await api.get(`/companies/${companyId.value}/items`, {
-      params: { for_sale: true, active_only: true },
+      params: { for_purchase: true, active_only: true },
     })
     items.value = res.data.data ?? res.data 
   } catch (err) {
     console.error("Failed to load items:", err)
   }
 }
-  
-const loadSalesTaxRates = async () => {
+
+const loadPurchaseTaxRates = async () => {
   try {
     const res = await api.get(`/companies/${companyId.value}/tax-rates`, {
-      params: { applies_to: "SALES", active_only: true },
+      params: { applies_to: "PURCHASES", active_only: true },
     })
     taxRates.value = res.data.data ?? res.data
   } catch (err) {
@@ -286,22 +286,22 @@ const loadSalesTaxRates = async () => {
   }
 }
 
-const loadInvoice = async () => {
+const loadBill = async () => {
   if (!isEditMode.value) return
 
   try {
     loading.value = true
-    const invoice = await invoiceService.get(invoiceUuid.value)
-    currentInvoice.value = invoice 
-    console.log("Loaded invoice:", invoice)
+    const bill = await billService.get(billUuid.value)
+    currentBill.value = bill 
+    console.log("Loaded bill:", bill)
 
     form.value = {
-      customer_id: invoice.customer?.id ?? null,
-      invoice_number: invoice.invoice_number,
-      issue_date: invoice.issue_date || "",
-      due_date: invoice.due_date || "", 
-      notes: invoice.notes || "",
-      items: invoice.items?.map((item: InvoiceItem) => ({
+      vendor_id: bill.vendor?.id ?? null,
+      bill_number: bill.bill_number,
+      issue_date: bill.issue_date || "",
+      due_date: bill.due_date || "", 
+      notes: bill.notes || "",
+      items: bill.items?.map((item: BillItem) => ({
         item_id: item.item_id,
         item: item.item,
         quantity: item.quantity,
@@ -313,7 +313,7 @@ const loadInvoice = async () => {
           compound_order: lt.compound_order || 1,
         })),
       })) || [],
-      invoice_taxes: invoice.taxes?.map((t: InvoiceTax) => ({
+      bill_taxes: bill.taxes?.map((t: BillTax) => ({
         tax_rate_id: t.tax_rate_id,
         is_compound: t.is_compound || false,
         compound_order: t.compound_order || 1,
@@ -321,7 +321,7 @@ const loadInvoice = async () => {
     }
   } catch (err: unknown) {
     const e = err as { response?: { data?: { message?: string } } }
-    error.value = e.response?.data?.message || "Failed to load invoice"
+    error.value = e.response?.data?.message || "Failed to load bill"
     console.error(err)
   } finally {
     loading.value = false
@@ -380,18 +380,18 @@ const selectItem = (index: number) => {
   delete formErrors.value[`items.${index}.item_id`]
 }
 
-const addInvoiceTax = () => {
-  form.value.invoice_taxes.push({
+const addBillTax = () => {
+  form.value.bill_taxes.push({
     tax_rate_id: 0,
     is_compound: false,
-    compound_order: form.value.invoice_taxes.length + 1,
+    compound_order: form.value.bill_taxes.length + 1,
   })
 }
 
-const removeInvoiceTax = (index: number) => {
-  form.value.invoice_taxes.splice(index, 1)
+const removeBillTax = (index: number) => {
+  form.value.bill_taxes.splice(index, 1)
   // Recalculate compound orders
-  form.value.invoice_taxes.forEach((t, i) => {
+  form.value.bill_taxes.forEach((t, i) => {
     t.compound_order = i + 1
   })
 } 
@@ -399,7 +399,7 @@ const removeInvoiceTax = (index: number) => {
 /* -----------------------------
    SAVE/POST FUNCTIONS
 ------------------------------ */
-const saveInvoice = async (showMessage = true) => {
+const saveBill = async (showMessage = true) => {
   try {
     saving.value = true
     clearErrors()
@@ -411,28 +411,28 @@ const saveInvoice = async (showMessage = true) => {
 
     const payload = {
       ...form.value,
-      customer_id: form.value.customer_id || undefined,
+      vendor_id: form.value.vendor_id || undefined,
     } 
 
     let result
     if (isEditMode.value) {
-      result = await invoiceService.update(invoiceUuid.value, payload) 
+      result = await billService.update(billUuid.value, payload) 
     } else {
-      result = await invoiceService.create(companyId.value, payload) 
-      if (!invoiceUuid.value || invoiceUuid.value === 'new') {
-        router.replace(`/app/${companyId.value}/invoices/${result.uuid}`)
+      result = await billService.create(companyId.value, payload) 
+      if (!billUuid.value || billUuid.value === 'new') {
+        router.replace(`/app/${companyId.value}/bills/${result.uuid}`)
       }
     } 
 
     lastSaved.value = new Date()
-    currentInvoice.value = result
+    currentBill.value = result
 
-    form.value.invoice_number = result.invoice_number
+    form.value.bill_number = result.bill_number
     if (showMessage) {
-      showSuccess("Invoice saved successfully")
+      showSuccess("Bill saved successfully")
     }
   } catch (err: any) {
-    handleApiError(err, "Failed to save invoice")
+    handleApiError(err, "Failed to save bill")
   } finally {
     saving.value = false
   }
@@ -444,36 +444,36 @@ const autoSave = () => {
   }  
   autoSaveTimeout.value = setTimeout(() => {
     if (!isAlive.value) return
-    saveInvoice(false)
+    saveBill(false)
   }, 2500) 
 }
 
-const postInvoice = async () => {
+const approveBill = async () => {
   if (!validateForm()) {
     return
   }
   
-  if (!confirm("Post this invoice? This will create journal entries and cannot be undone.")) return
+  if (!confirm("Approve this bill? This will create journal entries and cannot be undone.")) return
 
   try {
-    posting.value = true
+    approving.value = true
     clearErrors()
 
     // Save first if needed
-    if (!currentInvoice.value) {
-      await saveInvoice(false)
+    if (!currentBill.value) {
+      await saveBill(false)
     }
 
-    const result = await invoiceService.post(currentInvoice.value?.uuid || invoiceUuid.value)
-    currentInvoice.value = result
+    const result = await billService.approve(currentBill.value?.uuid || billUuid.value)
+    currentBill.value = result
 
-    showSuccess("Invoice posted successfully")
+    showSuccess("Bill approved successfully")
      
-    await loadInvoice()
+    await loadBill()
   } catch (err: any) {
-    handleApiError(err, "Failed to post invoice")
+    handleApiError(err, "Failed to approve bill")
   } finally {
-    posting.value = false
+    approving.value = false
   }
 }
 
@@ -484,12 +484,12 @@ const markAsPaid = async () => {
     saving.value = true
     clearErrors()
     
-    const result = await invoiceService.markAsPaid(currentInvoice.value?.uuid || invoiceUuid.value)
-    currentInvoice.value = result 
+    const result = await billService.markAsPaid(currentBill.value?.uuid || billUuid.value)
+    currentBill.value = result 
 
-    showSuccess("Invoice marked as paid")
+    showSuccess("Bill marked as paid")
      
-    await loadInvoice()
+    await loadBill()
   } catch (err: any) {
     handleApiError(err, "Failed to mark as paid")
   } finally {
@@ -498,7 +498,7 @@ const markAsPaid = async () => {
 }
 
 const goBack = () => {
-  router.push(`/app/${companyId.value}/invoices`)
+  router.push(`/app/${companyId.value}/bills`)
 }
 
 /* -----------------------------
@@ -512,7 +512,7 @@ watch(
       // Don't clear immediately, just clear as user fixes issues
     }
     
-    if (isEditMode.value && currentInvoice.value?.can_be_edited) {
+    if (isEditMode.value && currentBill.value?.can_be_edited) {
       autoSave()
     }
   },
@@ -570,7 +570,7 @@ function setEndNextMonth() {
    LIFECYCLE
 ------------------------------ */
 onMounted(async () => {
-  await Promise.all([loadCustomers(), loadSalesItems(), loadSalesTaxRates(), loadInvoice()])
+  await Promise.all([loadVendors(), loadPurchaseItems(), loadPurchaseTaxRates(), loadBill()])
 })
 
 onBeforeUnmount(() => {
@@ -596,19 +596,19 @@ onBeforeUnmount(() => {
         </button>
         <div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-            {{ isEditMode ? `Edit Invoice ${currentInvoice?.invoice_number || ''}` : "New Invoice" }}
+            {{ isEditMode ? `Edit Bill ${currentBill?.bill_number || ''}` : "New Bill" }}
           </h1>
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            <span v-if="currentInvoice?.status === 'draft'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+            <span v-if="currentBill?.status === 'draft'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
               Draft
             </span>
-            <span v-else-if="currentInvoice?.status === 'sent'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-              Sent
+            <span v-else-if="currentBill?.status === 'pending'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+              Pending
             </span>
-            <span v-else-if="currentInvoice?.status === 'paid'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+            <span v-else-if="currentBill?.status === 'paid'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
               Paid
             </span>
-            <span v-else-if="currentInvoice?.status === 'overdue'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+            <span v-else-if="currentBill?.status === 'overdue'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
               Overdue
             </span>
           </p>
@@ -619,8 +619,8 @@ onBeforeUnmount(() => {
           Last saved: {{ formatDateTime(lastSaved) }}
         </span> 
         <button
-          v-if="currentInvoice?.can_be_edited || !isEditMode"
-          @click="saveInvoice()"
+          v-if="currentBill?.can_be_edited || !isEditMode"
+          @click="saveBill()"
           :disabled="saving"
           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 flex items-center gap-2"
         >
@@ -631,19 +631,19 @@ onBeforeUnmount(() => {
           {{ saving ? 'Saving...' : 'Save Draft' }}
         </button>
         <button
-          v-if="(currentInvoice?.can_be_edited && currentInvoice.status === 'draft') || (!isEditMode && form.items.length > 0)"
-          @click="postInvoice"
-          :disabled="posting || saving"
+          v-if="(currentBill?.can_be_edited && currentBill.status === 'draft') || (!isEditMode && form.items.length > 0)"
+          @click="approveBill"
+          :disabled="approving || saving"
           class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
         >
-          <svg v-if="posting" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg v-if="approving" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
           </svg>
-          {{ posting ? 'Posting...' : 'Post Invoice' }}
+          {{ approving ? 'Approving...' : 'Approve Bill' }}
         </button>
         <button
-          v-if="currentInvoice?.status === 'sent'"
+          v-if="currentBill?.status === 'pending'"
           @click="markAsPaid"
           :disabled="saving"
           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
@@ -705,30 +705,30 @@ onBeforeUnmount(() => {
     <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Main Form -->
       <div class="lg:col-span-2 space-y-6">
-        <!-- Invoice Details -->
+        <!-- Bill Details -->
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow border p-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Invoice Details</h2>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Bill Details</h2>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer <span class="text-red-500">*</span></label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor <span class="text-red-500">*</span></label>
               <select
-                v-model="form.customer_id"
-                :disabled="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'"
+                v-model="form.vendor_id"
+                :disabled="currentBill?.status === 'pending' || currentBill?.status === 'paid'"
                 class="w-full border rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                :class="{ 'border-red-500': formErrors.customer_id }"
+                :class="{ 'border-red-500': formErrors.vendor_id }"
               >
-                <option :value="null">Select customer</option>
-                <option v-for="customer in customers" :key="customer.id" :value="customer.id">
-                  {{ customer.contact_name }} ({{ customer.person_name ? `- ${customer.person_name}` : '' }})
+                <option :value="null">Select vendor</option>
+                <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
+                  {{ vendor.contact_name }} ({{ vendor.person_name ? `- ${vendor.person_name}` : '' }})
                 </option>
               </select>
-              <p v-if="formErrors.customer_id" class="mt-1 text-sm text-red-600">{{ formErrors.customer_id[0] }}</p>
+              <p v-if="formErrors.vendor_id" class="mt-1 text-sm text-red-600">{{ formErrors.vendor_id[0] }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invoice Number</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bill Number</label>
               <input
-                v-model="form.invoice_number"
-                :disabled="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'"
+                v-model="form.bill_number"
+                :disabled="currentBill?.status === 'pending' || currentBill?.status === 'paid'"
                 type="text"
                 placeholder="Auto-generated if empty"
                 class="w-full border rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -738,7 +738,7 @@ onBeforeUnmount(() => {
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Issue Date</label>
               <input
                 v-model="form.issue_date"
-                :disabled="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'"
+                :disabled="currentBill?.status === 'pending' || currentBill?.status === 'paid'"
                 type="date"
                 class="w-full border rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -752,7 +752,7 @@ onBeforeUnmount(() => {
                 <!-- Date Picker -->
                 <input
                   v-model="form.due_date"
-                  :disabled="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'"
+                  :disabled="currentBill?.status === 'pending' || currentBill?.status === 'paid'"
                   type="date"
                   class="flex-1 border rounded-lg px-3 py-2
                         bg-white dark:bg-slate-700
@@ -762,7 +762,7 @@ onBeforeUnmount(() => {
                 />
 
                 <!-- Quick Options -->
-                <div v-if="currentInvoice?.status !== 'sent' && currentInvoice?.status !== 'paid'" class="flex flex-wrap gap-1">
+                <div v-if="currentBill?.status !== 'pending' && currentBill?.status !== 'paid'" class="flex flex-wrap gap-1">
                   <button
                     type="button"
                     class="preset-btn"
@@ -794,7 +794,7 @@ onBeforeUnmount(() => {
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
             <textarea
               v-model="form.notes"
-              :disabled="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'"
+              :disabled="currentBill?.status === 'pending' || currentBill?.status === 'paid'"
               rows="2"
               placeholder="Additional notes..."
               class="w-full border rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -807,7 +807,7 @@ onBeforeUnmount(() => {
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Line Items</h2>
             <button
-              v-if="currentInvoice?.can_be_edited || !isEditMode"
+              v-if="currentBill?.can_be_edited || !isEditMode"
               @click="addLineItem"
               class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors flex items-center gap-1"
             >
@@ -838,7 +838,7 @@ onBeforeUnmount(() => {
                   <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Item</label>
                   <select
                     v-model="item.item_id"
-                    :disabled="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'"
+                    :disabled="currentBill?.status === 'pending' || currentBill?.status === 'paid'"
                     @change="selectItem(index)"
                     class="w-full border rounded-lg px-2 py-1.5 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
                   >
@@ -855,7 +855,7 @@ onBeforeUnmount(() => {
                   <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Qty</label>
                   <input
                     v-model.number="item.quantity"
-                    :disabled="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'"
+                    :disabled="currentBill?.status === 'pending' || currentBill?.status === 'paid'"
                     type="number"
                     min="1"
                     step="1"
@@ -869,7 +869,7 @@ onBeforeUnmount(() => {
                   <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Unit Price</label>
                   <input
                     v-model.number="item.unit_price"
-                    :disabled="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'"
+                    :disabled="currentBill?.status === 'pending' || currentBill?.status === 'paid'"
                     type="number"
                     min="0"
                     step="0.01"
@@ -880,7 +880,7 @@ onBeforeUnmount(() => {
                   <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Discount %</label>
                   <input
                     v-model.number="item.discount_percent"
-                    :disabled="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'"
+                    :disabled="currentBill?.status === 'pending' || currentBill?.status === 'paid'"
                     type="number"
                     min="0"
                     max="100"
@@ -890,7 +890,7 @@ onBeforeUnmount(() => {
                 </div>
                 <div class="col-span-1 pt-5">
                   <button
-                    v-if="currentInvoice?.can_be_edited || !isEditMode"
+                    v-if="currentBill?.can_be_edited || !isEditMode"
                     @click="removeLineItem(index)"
                     class="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                   >
@@ -905,7 +905,7 @@ onBeforeUnmount(() => {
                   Subtotal: {{ formatCurrency((item.quantity || 0) * (item.unit_price || 0) - ((item.quantity || 0) * (item.unit_price || 0) * (item.discount_percent || 0) / 100)) }}
                 </div>
                 <button
-                  v-if="currentInvoice?.can_be_edited || !isEditMode"
+                  v-if="currentBill?.can_be_edited || !isEditMode"
                   @click="addLineTax(index)"
                   class="text-xs text-blue-600 hover:text-blue-700"
                 >
@@ -922,7 +922,7 @@ onBeforeUnmount(() => {
                 >
                   <select
                     v-model="tax.tax_rate_id"
-                    :disabled="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'"
+                    :disabled="currentBill?.status === 'pending' || currentBill?.status === 'paid'"
                     class="text-xs border rounded px-2 py-1 bg-white dark:bg-slate-700 border-gray-300 dark:border-gray-600"
                   >
                     <option :value="0">Select tax</option>
@@ -931,7 +931,7 @@ onBeforeUnmount(() => {
                     </option>
                   </select>
                   <button
-                    v-if="currentInvoice?.can_be_edited || !isEditMode"
+                    v-if="currentBill?.can_be_edited || !isEditMode"
                     @click="removeLineTax(index, taxIndex)"
                     class="text-red-600 hover:text-red-700"
                   >
@@ -945,13 +945,13 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Invoice-level Taxes -->
+        <!-- Bill-level Taxes -->
         <div v-if="form.items.length > 0" class="bg-white dark:bg-slate-800 rounded-xl shadow border p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Invoice-level Taxes</h2>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Bill-level Taxes</h2>
             <button
-              v-if="currentInvoice?.can_be_edited || !isEditMode"
-              @click="addInvoiceTax"
+              v-if="currentBill?.can_be_edited || !isEditMode"
+              @click="addBillTax"
               class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors flex items-center gap-1"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -961,19 +961,19 @@ onBeforeUnmount(() => {
             </button>
           </div>
 
-          <div v-if="form.invoice_taxes.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+          <div v-if="form.bill_taxes.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
             No additional taxes
           </div>
 
           <div v-else class="space-y-2">
             <div
-              v-for="(tax, index) in form.invoice_taxes"
+              v-for="(tax, index) in form.bill_taxes"
               :key="index"
               class="flex items-center gap-3"
             >
               <select
                 v-model="tax.tax_rate_id"
-                :disabled="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'"
+                :disabled="currentBill?.status === 'pending' || currentBill?.status === 'paid'"
                 class="flex-1 border rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               >
                 <option :value="0">Select tax</option>
@@ -984,15 +984,15 @@ onBeforeUnmount(() => {
               <label class="flex items-center gap-1 text-sm">
                 <input
                   v-model="tax.is_compound"
-                  :disabled="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'"
+                  :disabled="currentBill?.status === 'pending' || currentBill?.status === 'paid'"
                   type="checkbox"
                   class="rounded border-gray-300"
                 />
                 Compound
               </label>
               <button
-                v-if="currentInvoice?.can_be_edited || !isEditMode"
-                @click="removeInvoiceTax(index)"
+                v-if="currentBill?.can_be_edited || !isEditMode"
+                @click="removeBillTax(index)"
                 class="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1023,38 +1023,38 @@ onBeforeUnmount(() => {
               <span class="text-gray-900 dark:text-white">{{ formatCurrency(lineTaxTotal) }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600 dark:text-gray-400">Tax (Invoice)</span>
-              <span class="text-gray-900 dark:text-white">{{ formatCurrency(invoiceTaxTotal) }}</span>
+              <span class="text-gray-600 dark:text-gray-400">Tax (Bill)</span>
+              <span class="text-gray-900 dark:text-white">{{ formatCurrency(billTaxTotal) }}</span>
             </div>
             <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between">
               <span class="text-gray-900 dark:text-white font-semibold">Total</span>
               <span class="text-gray-900 dark:text-white font-bold text-lg">{{ formatCurrency(totalAmount) }}</span>
             </div>
-            <div v-if="currentInvoice?.amount_paid" class="flex justify-between">
+            <div v-if="currentBill?.amount_paid" class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-400">Paid</span>
-              <span class="text-green-600 dark:text-green-400">{{ formatCurrency(currentInvoice.amount_paid) }}</span>
+              <span class="text-green-600 dark:text-green-400">{{ formatCurrency(currentBill.amount_paid) }}</span>
             </div>
-            <div v-if="currentInvoice?.amount_due" class="flex justify-between">
+            <div v-if="currentBill?.amount_due" class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-400">Amount Due</span>
-              <span class="text-orange-600 dark:text-orange-400 font-medium">{{ formatCurrency(currentInvoice.amount_due) }}</span>
+              <span class="text-orange-600 dark:text-orange-400 font-medium">{{ formatCurrency(currentBill.amount_due) }}</span>
             </div>
           </div>  
 
           <div class="mt-6 p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
             <div class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-              <p v-if="currentInvoice?.status === 'draft'"><strong>Draft:</strong> Save without validation</p>
-              <p v-if="currentInvoice?.status === 'draft'"><strong>Post:</strong> Creates journal entry & marks as sent</p>
-              <p v-if="currentInvoice?.status === 'sent' || currentInvoice?.status === 'paid'" class="text-yellow-600 dark:text-yellow-400 mt-2">⚠️ Posted invoices cannot be edited</p>
+              <p v-if="currentBill?.status === 'draft'"><strong>Draft:</strong> Save without validation</p>
+              <p v-if="currentBill?.status === 'draft'"><strong>Post:</strong> Creates journal entry & marks as pending</p>
+              <p v-if="currentBill?.status === 'pending' || currentBill?.status === 'paid'" class="text-yellow-600 dark:text-yellow-400 mt-2">⚠️ Posted invoices cannot be edited</p>
             </div>
           </div>
 
           <!-- Journal Entry Info -->
-          <div v-if="currentInvoice?.journal_entry" class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div v-if="currentBill?.journal_entry" class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
             <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Journal Entry</h3>
             <div class="text-xs space-y-1 text-gray-600 dark:text-gray-400">
-              <p>Entry #: {{ currentInvoice.journal_entry.entry_number }}</p>
-              <p>Date: {{ currentInvoice.journal_entry.entry_date }}</p>
-              <p>Status: {{ currentInvoice.journal_entry.posted ? 'Posted' : 'Draft' }}</p>
+              <p>Entry #: {{ currentBill.journal_entry.entry_number }}</p>
+              <p>Date: {{ currentBill.journal_entry.entry_date }}</p>
+              <p>Status: {{ currentBill.journal_entry.posted ? 'Posted' : 'Draft' }}</p>
             </div>
           </div>
         </div>
