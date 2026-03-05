@@ -403,12 +403,7 @@ const saveInvoice = async (showMessage = true) => {
   try {
     saving.value = true
     clearErrors()
-
-    // Client-side validation (optional - backend will also validate)
-    // if (!validateForm()) {
-    //   return
-    // }
-
+ 
     const payload = {
       ...form.value,
       customer_id: form.value.customer_id || undefined,

@@ -105,6 +105,18 @@ export const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true },
       },
       {
+        path: "orders",
+        name: "PurchaseOrders",
+        component: () => import("@/views/PurchaseOrdersListPage.vue"),
+        meta: { requiresAuth: true },
+      },  
+      {
+        path: "orders/:uuid",
+        name: "PurchaseOrderDetail",
+        component: () => import("@/views/PurchaseOrdersCreatePage.vue"),
+        meta: { requiresAuth: true },
+      },
+      {
         path: "settings",
         name: "Settings",
         component: () => import("@/views/admin/settings/SettingsPage.vue"),

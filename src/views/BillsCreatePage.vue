@@ -292,8 +292,7 @@ const loadBill = async () => {
   try {
     loading.value = true
     const bill = await billService.get(billUuid.value)
-    currentBill.value = bill 
-    console.log("Loaded bill:", bill)
+    currentBill.value = bill  
 
     form.value = {
       vendor_id: bill.vendor?.id ?? null,
@@ -402,13 +401,8 @@ const removeBillTax = (index: number) => {
 const saveBill = async (showMessage = true) => {
   try {
     saving.value = true
-    clearErrors()
-
-    // Client-side validation (optional - backend will also validate)
-    // if (!validateForm()) {
-    //   return
-    // }
-
+    clearErrors() 
+    
     const payload = {
       ...form.value,
       vendor_id: form.value.vendor_id || undefined,
