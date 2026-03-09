@@ -8,5 +8,7 @@ export * from "./taxRates";
 export * from "./company";
 export * from "./fiscalPeriods";
 export * from "./invoices";
+export * from "./bills";
+export * from "./purchase-order";
 export * from "./billing";
 export * from "./quotes";

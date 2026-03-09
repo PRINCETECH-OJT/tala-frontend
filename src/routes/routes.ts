@@ -99,8 +99,32 @@ export const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true },
       },
       {
+        path: "bills",
+        name: "Bills",
+        component: () => import("@/views/BillsListPage.vue"),
+        meta: { requiresAuth: true },
+      }, 
+      {
+        path: "bills/:uuid",
+        name: "BillDetail",
+        component: () => import("@/views/BillsCreatePage.vue"),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: "orders",
+        name: "PurchaseOrders",
+        component: () => import("@/views/PurchaseOrdersListPage.vue"),
+        meta: { requiresAuth: true },
+      },  
+      {
+        path: "orders/:uuid",
+        name: "PurchaseOrderDetail",
+        component: () => import("@/views/PurchaseOrdersCreatePage.vue"),
+        meta: { requiresAuth: true },
+      },
+      {
         path: "quotes",
-        name: "quotes",
+        name: "Sales Quotes",
         component: () => import("@/views/QuotesListPage.vue"),
         meta: { requiresAuth: true },
       },

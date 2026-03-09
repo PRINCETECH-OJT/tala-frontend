@@ -1,10 +1,10 @@
-export interface InvoiceCustomer {
-  id: number
+export interface BillVendor {
+  id: number 
   name: string
   email: string
 }
 
-export interface InvoiceItem {
+export interface BillItem {
   id: number
   uuid: string
   item_id: number
@@ -15,7 +15,7 @@ export interface InvoiceItem {
   line_subtotal: number
   tax_amount: number
   line_total: number
-  revenue_account_id: number | null
+  expense_account_id: number | null
   item?: {
     uuid: string 
     id: number 
@@ -24,10 +24,10 @@ export interface InvoiceItem {
     description: string | null
     sales_price: number
   }
-  line_taxes?: InvoiceLineTax[]
+  line_taxes?: BillLineTax[]
 }
 
-export interface InvoiceLineTax {
+export interface BillLineTax {
   id: number
   tax_rate_id: number
   taxable_amount: number
@@ -43,7 +43,7 @@ export interface InvoiceLineTax {
   }
 }
 
-export interface InvoiceTax {
+export interface BillTax {
   id: number
   tax_rate_id: number
   taxable_amount: number
@@ -59,7 +59,7 @@ export interface InvoiceTax {
   }
 }
 
-export interface InvoiceJournalEntry {
+export interface BillJournalEntry {
   id: number
   uuid: string
   entry_number: string
@@ -71,16 +71,16 @@ export interface InvoiceJournalEntry {
   total_credits: number
 }
 
-export interface InvoiceTaxBreakdown {
+export interface BillTaxBreakdown {
   tax_name: string
   tax_code: string
   rate_percent: number
   taxable_amount: number
   tax_amount: number
-  source: 'line_level' | 'invoice_level' | 'combined'
+  source: 'line_level' | 'bill_level' | 'combined'
 }
 
-export interface InvoiceSummary {
+export interface BillSummary {
   subtotal: number
   discount: number
   taxable_amount: number
@@ -88,20 +88,20 @@ export interface InvoiceSummary {
   total_amount: number
   amount_paid: number
   amount_due: number
-  tax_breakdown: InvoiceTaxBreakdown[]
+  tax_breakdown: BillTaxBreakdown[]
 }
 
-export interface Invoice {
+export interface Bill {
   id: number
   uuid: string
-  invoice_number: string
+  bill_number: string
   issue_date: string | null
   due_date: string | null
   subtotal: number
   discount_amount: number
   tax_amount: number
   total_amount: number
-  status: 'draft' | 'sent' | 'paid' | 'overdue'
+  status: 'draft' | 'pending' | 'paid' | 'overdue'
   notes: string | null
   created_at: string
   updated_at: string
@@ -109,23 +109,23 @@ export interface Invoice {
     id: number
     name: string
   }
-  customer: InvoiceCustomer
-  // customer_id: number
-  items: InvoiceItem[]
-  taxes: InvoiceTax[]
-  journal_entry?: InvoiceJournalEntry
-  summary?: InvoiceSummary
+  vendor: BillVendor
+  // vendor_id: number  
+  items: BillItem[]
+  taxes: BillTax[]
+  journal_entry?: BillJournalEntry
+  summary?: BillSummary
   amount_paid: number
   amount_due: number
   is_draft: boolean
-  is_sent: boolean
+  is_pending: boolean
   is_paid: boolean
   is_overdue: boolean
   can_be_edited: boolean
   can_be_deleted: boolean
 }
 
-export interface InvoiceFormItem {
+export interface BillFormItem {
   item_id: number | null
   item?: {
     id: number
@@ -145,14 +145,14 @@ export interface InvoiceFormItem {
   }[]
 }
 
-export interface InvoiceFormData {
-  customer_id: number | null
-  invoice_number?: string
+export interface BillFormData {
+  vendor_id: number | null
+  bill_number?: string
   issue_date: string | null
   due_date: string | null 
   notes: string
-  items: InvoiceFormItem[]
-  invoice_taxes: {
+  items: BillFormItem[]
+  bill_taxes: {
     tax_rate_id: number
     is_compound: boolean
     compound_order: number
@@ -160,13 +160,13 @@ export interface InvoiceFormData {
   }[]
 }
 
-export interface InvoiceStatistics {
-  total_invoices: number
-  draft_invoices: number
-  sent_invoices: number
-  paid_invoices: number
-  overdue_invoices: number
-  unpaid_invoices: number 
-  total_revenue: number
-  outstanding_amount: number  
+export interface BillStatistics {
+  total_bills: number
+  draft_bills: number
+  pending_bills: number
+  paid_bills: number
+  overdue_bills: number
+  unpaid_bills: number 
+  total_expense: number
+  outstanding_amount: number   
 }

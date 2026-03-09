@@ -1,7 +1,7 @@
 import { api } from "@/services"
-import type { Invoice, InvoiceFormData, InvoiceStatistics } from "@/types"
+import type { BillFormData } from "@/types"
 
-const BASE_URL = (companyUuid: string) => `/companies/${companyUuid}/invoices`
+const BASE_URL = (companyUuid: string) => `/companies/${companyUuid}/bills`
 
 export default {
   async getAll(companyUuid: string, params?: {
@@ -9,7 +9,7 @@ export default {
     per_page?: number
     search?: string
     status?: string
-    customer?: string
+    vendor?: string
     date_range?: { start: string; end: string }
   }) {
     const response = await api.get(BASE_URL(companyUuid), { params })
@@ -17,31 +17,31 @@ export default {
   },
 
   async get(uuid: string) {
-    const response = await api.get(`/invoices/${uuid}`)
+    const response = await api.get(`/bills/${uuid}`)
     return response.data.data ?? response.data
   },
 
-  async create(companyUuid: string, data: Partial<InvoiceFormData>) {
+  async create(companyUuid: string, data: Partial<BillFormData>) {
     const response = await api.post(BASE_URL(companyUuid), data)
     return response.data.data ?? response.data
   },
 
-  async update(uuid: string, data: Partial<InvoiceFormData>) {
-    const response = await api.put(`/invoices/${uuid}`, data)
+  async update(uuid: string, data: Partial<BillFormData>) {
+    const response = await api.put(`/bills/${uuid}`, data)
     return response.data.data ?? response.data
   },
 
   async delete(uuid: string) {
-    return api.delete(`/invoices/${uuid}`)
+    return api.delete(`/bills/${uuid}`)
   },
 
-  async post(uuid: string) {
-    const response = await api.post(`/invoices/${uuid}/post`, {}) 
+  async approve(uuid: string) {
+    const response = await api.post(`/bills/${uuid}/approve`, {}) 
     return response.data.data ?? response.data
   },
 
   async markAsPaid(uuid: string) {
-    const response = await api.post(`/invoices/${uuid}/mark-as-paid`, {}) 
+    const response = await api.post(`/bills/${uuid}/mark-as-paid`, {})
     return response.data.data ?? response.data
   },
 

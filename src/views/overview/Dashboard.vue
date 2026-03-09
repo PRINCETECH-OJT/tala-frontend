@@ -55,8 +55,8 @@ const metrics = [
         <Button variant="outline" class="hidden md:flex"
           >Download Report</Button
         >
-        <Button class="bg-blue-900 hover:bg-blue-800 shadow-md gap-2">
-          <Plus class="w-4 h-4" /> Create Invoice
+        <Button class="bg-blue-900 hover:bg-blue-800 text-gray-200 shadow-md gap-2">
+          New <Plus class="w-4 h-4" /> 
         </Button>
       </div>
     </div>
