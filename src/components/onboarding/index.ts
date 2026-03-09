@@ -1,1 +1,1 @@
-export { default as CompanyOnboardingForm } from "./CompanyOnBoardingForm.vue";
+export { default as CompanyOnboardingForm } from "./CompanyOnboardingForm.vue";

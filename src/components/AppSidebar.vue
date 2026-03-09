@@ -27,6 +27,15 @@ import {
 } from "@/components/ui/collapsible";
 
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+import {
   LayoutDashboard,
   Landmark,
   Briefcase,
@@ -41,11 +50,12 @@ import {
   ChevronRight,
   ReceiptCent,
   LogOut,
-  Calendar
+  Calendar,
+  Building,
 } from "lucide-vue-next";
 
 const props = defineProps<SidebarProps>();
-const router = useRouter(); 
+const router = useRouter();
 const authStore = useAuthStore();
 const companyStore = useCompanyStore();
 
@@ -53,7 +63,7 @@ const userName = computed(() => authStore.user?.name || "Guest User");
 
 const userRole = computed(() => {
   const roles = authStore.user?.roles;
- 
+
   if (!roles?.length) return "User";
   // Logic to capitalize the first role found
   const role = roles[0];
@@ -103,7 +113,7 @@ const data: { navMain: NavMainItem[] } = {
         { title: "Banking", url: "/banking", icon: CreditCard },
         { title: "Accounts", url: "/accounts", icon: CreditCard },
         { title: "Tax Rates", url: "/taxes", icon: ReceiptCent },
-        { title: "Products/Services", url: "/items", icon: Briefcase }, 
+        { title: "Products/Services", url: "/items", icon: Briefcase },
       ],
     },
     {
@@ -112,10 +122,9 @@ const data: { navMain: NavMainItem[] } = {
       items: [
         { title: "Periods", url: "/fiscal-periods", icon: Calendar },
         { title: "Contacts", url: "/contacts", icon: Landmark },
-        { title: "Sales (AR)", url: "/sales", icon: CreditCard },
-        { title: "Purchases (AP)", url: "/purchases", icon: Receipt },
         { title: "Invoices", url: "/invoices", icon: FileText },
-        { title: "Bills", url: "/bills", icon: ReceiptCent }, 
+        { title: "Quotes", url: "/quotes", icon: FileText },
+        { title: "Bills", url: "/bills", icon: ReceiptCent },
       ],
     },
     {
@@ -124,7 +133,6 @@ const data: { navMain: NavMainItem[] } = {
       items: [
         { title: "User Management", url: "/users", icon: Users },
         { title: "Roles & Permissions", url: "/roles", icon: ShieldCheck },
-        { title: "Settings", url: "/settings", icon: Settings },
       ],
     },
   ],
@@ -132,82 +140,38 @@ const data: { navMain: NavMainItem[] } = {
 </script>
 
 <template>
-  <Sidebar v-bind="props" collapsible="icon">
+  <Sidebar
+    v-bind="props"
+    collapsible="icon"
+    class="bg-[#0b1741] text-white border-r-0"
+  >
     <SidebarHeader
-      class="flex flex-col items-center justify-center py-6 transition-all group-data-[collapsible=icon]:py-2"
+      class="py-6 px-6 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-4 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center"
     >
       <div
-        class="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground shadow-sm group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:border-2"
+        class="flex items-center gap-4 group-data-[collapsible=icon]:justify-center"
       >
-        <span
-          v-if="!authStore.user?.avatar"
-          class="text-xl font-bold group-data-[collapsible=icon]:text-xs"
-        >
-          {{ userInitials }}
-        </span>
-        <img
-          v-else
-          :src="authStore.user?.avatar"
-          alt="Profile"
-          class="aspect-square h-full w-full object-cover"
-        />
-      </div>
-
-      <div
-        class="mt-3 flex flex-col items-center gap-1 group-data-[collapsible=icon]:hidden"
-      >
-        <span class="text-sm font-semibold text-sidebar-foreground">
-          {{ userName }}
-        </span>
-        <span
-          class="text-xs font-semibold uppercase tracking-widest text-secondary"
-        >
-          {{ userRole }}
-        </span>
-      </div>
-      <div
-        v-if="companyStore.currentCompany"
-        class="mt-4 w-full px-2 group-data-[collapsible=icon]:hidden"
-      >
-        <label
-          class="text-xs font-semibold uppercase tracking-widest text-secondary mb-2 block"
-        >
-          Company
-        </label>
         <div
-          class="flex items-center gap-2 rounded-lg bg-sidebar-accent/50 p-2 hover:bg-sidebar-accent transition-colors"
+          class="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-500 overflow-hidden group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10"
         >
-          <img
-            v-if="companyStore.currentCompany?.logo_url"
-            :src="companyStore.currentCompany.logo_url"
-            :alt="companyStore.currentCompany.name"
-            class="h-6 w-6 rounded object-cover"
-          />
-          <select
-            class="flex-1 bg-transparent text-sm font-medium outline-none cursor-pointer"
-            :value="companyStore.companyId"
-            @change="
-              (e) =>
-                changeCompany(
-                  companyStore.companies.find(
-                    (c) => c.id === (e.target as HTMLSelectElement).value,
-                  ),
-                )
-            "
-          >
-            <option
-              v-for="company in companyStore.companies"
-              :key="company.id"
-              :value="company.id"
-            >
-              {{ company.name }}
-            </option>
-          </select>
+          <div
+            class="absolute -top-1 -left-1 h-7 w-7 bg-[#0b1741] rounded-full group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:w-5"
+          ></div>
+          <div
+            class="h-5 w-5 rounded-full bg-[#0b1741] group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:w-4"
+          ></div>
         </div>
+        <span
+          class="text-2xl font-bold tracking-wide text-white group-data-[collapsible=icon]:hidden"
+        >
+          T.A.L.A
+        </span>
       </div>
     </SidebarHeader>
 
-    <SidebarContent>
+    <SidebarContent
+      class="px-4 gap-2 overflow-y-auto custom-scrollbar group-data-[collapsible=icon]:px-2"
+    >
       <SidebarMenu>
         <Collapsible
           v-for="item in data.navMain"
@@ -216,34 +180,42 @@ const data: { navMain: NavMainItem[] } = {
           :default-open="item.isActive"
           class="group/collapsible"
         >
-          <SidebarMenuItem>
+          <SidebarMenuItem class="my-1">
             <CollapsibleTrigger as-child>
               <SidebarMenuButton
                 :tooltip="item.title"
-                class="flex items-center gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
+                class="flex items-center gap-4 py-6 px-3 hover:bg-white/10 hover:text-white group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-3 group-data-[collapsible=icon]:h-auto transition-colors rounded-lg text-white"
               >
-                <component :is="item.icon" class="h-5 w-5" />
-                <span class="font-medium group-data-[collapsible=icon]:hidden">
+                <component :is="item.icon" class="h-5 w-5 shrink-0" />
+                <span
+                  class="text-[15px] font-medium group-data-[collapsible=icon]:hidden"
+                >
                   {{ item.title }}
                 </span>
                 <ChevronRight
-                  class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden"
+                  class="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden"
                 />
               </SidebarMenuButton>
             </CollapsibleTrigger>
 
             <CollapsibleContent>
-              <SidebarMenuSub>
+              <SidebarMenuSub
+                class="border-l border-white/20 ml-5 pl-2 mt-1 mb-2 flex flex-col gap-1 group-data-[collapsible=icon]:hidden"
+              >
                 <SidebarMenuSubItem
                   v-for="childItem in item.items"
                   :key="childItem.title"
                 >
-                  <SidebarMenuSubButton as-child>
+                  <SidebarMenuSubButton
+                    as-child
+                    class="h-auto w-full p-0 hover:bg-transparent"
+                  >
                     <RouterLink
                       :to="`/app/${companyStore.companyId}${childItem.url}`"
-                      active-class="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      class="block w-full px-4 py-2.5 text-sm text-slate-300 hover:text-white transition-colors rounded-lg"
+                      active-class="bg-[#1043b3] !text-white font-semibold"
                     >
-                      <span>{{ childItem.title }}</span>
+                      {{ childItem.title }}
                     </RouterLink>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
@@ -254,26 +226,104 @@ const data: { navMain: NavMainItem[] } = {
       </SidebarMenu>
     </SidebarContent>
 
-    <SidebarFooter class="p-2 border-sidebar-border">
-      <SidebarMenu>
+    <SidebarFooter class="p-4 gap-4 pb-8 group-data-[collapsible=icon]:px-2">
+      <SidebarMenu class="group-data-[collapsible=icon]:hidden">
         <SidebarMenuItem>
           <SidebarMenuButton
             as-child
-            class="group-data-[collapsible=icon]:!p-0 justify-center hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/50 cursor-pointer transition-colors"
-            tooltip="Logout"
+            class="hover:bg-white/10 py-6 px-4 rounded-lg transition-colors hover:text-white text-slate-300"
           >
-            <button
-              @click="handleLogout"
-              class="flex w-full items-center justify-center gap-2 group-data-[collapsible=icon]:gap-0"
+            <RouterLink
+              :to="`/app/${companyStore.companyId}/settings`"
+              class="flex items-center gap-4"
             >
-              <LogOut class="h-4 w-4" />
-              <span class="font-medium group-data-[collapsible=icon]:hidden">
-                Logout
-              </span>
-            </button>
+              <Settings class="h-5 w-5 shrink-0" />
+              <span class="text-[15px] font-medium">Settings</span>
+            </RouterLink>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <div
+            class="flex items-center gap-3 cursor-pointer p-2 hover:bg-white/10 rounded-xl transition-colors mt-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
+          >
+            <div
+              class="h-10 w-10 rounded-full border-2 border-amber-500 overflow-hidden shrink-0 shadow-lg group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9"
+            >
+              <img
+                v-if="authStore.user?.avatar"
+                :src="authStore.user?.avatar"
+                alt="Profile"
+                class="h-full w-full object-cover"
+              />
+              <div
+                v-else
+                class="h-full w-full bg-amber-500 flex items-center justify-center text-sm font-bold text-white"
+              >
+                {{ userInitials }}
+              </div>
+            </div>
+            <div
+              class="flex flex-col overflow-hidden group-data-[collapsible=icon]:hidden"
+            >
+              <span class="text-[15px] font-semibold text-white truncate">
+                {{ userName }}
+              </span>
+              <span class="text-xs text-slate-300 truncate">
+                {{ authStore.user?.email || "user@example.com" }}
+              </span>
+            </div>
+          </div>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent
+          align="end"
+          class="w-56 bg-white border-slate-200 shadow-xl ml-2"
+        >
+          <DropdownMenuLabel
+            class="text-xs font-semibold uppercase tracking-wider text-slate-500"
+          >
+            Company Select
+          </DropdownMenuLabel>
+          <div class="px-2 py-2">
+            <div class="flex items-center gap-2 rounded-md bg-slate-100 p-2">
+              <Building class="h-4 w-4 text-slate-500" />
+              <select
+                class="flex-1 bg-transparent text-sm font-medium outline-none cursor-pointer text-slate-800"
+                :value="companyStore.companyId"
+                @change="
+                  (e) =>
+                    changeCompany(
+                      companyStore.companies.find(
+                        (c) => c.id === (e.target as HTMLSelectElement).value,
+                      ),
+                    )
+                "
+              >
+                <option
+                  v-for="company in companyStore.companies"
+                  :key="company.id"
+                  :value="company.id"
+                >
+                  {{ company.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            @click="handleLogout"
+            class="text-red-600 cursor-pointer focus:bg-red-50 focus:text-red-700 py-2.5"
+          >
+            <LogOut class="mr-2 h-4 w-4" />
+            <span class="font-medium">Sign out</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </SidebarFooter>
 
     <SidebarRail />
