@@ -53,7 +53,7 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "accounts",
         name: "ChartofAccounts",
-        component: () => import("@/views/ChartofAccountsPage.vue"), 
+        component: () => import("@/views/ChartofAccountsPage.vue"),
         meta: { requiresAuth: true },
       },
       {
@@ -67,6 +67,12 @@ export const routes: RouteRecordRaw[] = [
         name: "TaxManagement",
         component: () => import("@/views/TaxRatesPage.vue"),
         meta: { requiresAuth: true },
+      },
+      {
+        path: "bills",
+        name: "Bills",
+        component: () => import("@/views/BillingPage.vue"),
+        meta: { permission: "system.settings", requiresAuth: true },
       },
       {
         path: "contacts",
@@ -114,6 +120,12 @@ export const routes: RouteRecordRaw[] = [
         path: "orders/:uuid",
         name: "PurchaseOrderDetail",
         component: () => import("@/views/PurchaseOrdersCreatePage.vue"),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: "quotes",
+        name: "Sales Quotes",
+        component: () => import("@/views/QuotesListPage.vue"),
         meta: { requiresAuth: true },
       },
       {
