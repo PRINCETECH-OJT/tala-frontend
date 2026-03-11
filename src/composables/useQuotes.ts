@@ -16,7 +16,7 @@ export default function useQuotes() {
       const response = await api.get(`/companies/${companyUuid}/quotes`, {
         params: { page, ...filters },
       });
-      quotes.value = response.data.data.data;
+      quotes.value = response.data.data;
     } catch (err: any) {
       errors.value = err.response?.data?.message || "Failed to fetch quotes";
     } finally {

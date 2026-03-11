@@ -129,6 +129,12 @@ export const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true },
       },
       {
+        path: "quotes/:uuid",
+        name: "QuoteDetails",
+        component: () => import("@/views/QuotesCreatePage.vue"),
+        meta: { requiresAuth: true },
+      },
+      {
         path: "settings",
         name: "Settings",
         component: () => import("@/views/admin/settings/SettingsPage.vue"),

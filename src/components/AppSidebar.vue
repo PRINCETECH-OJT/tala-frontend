@@ -55,6 +55,7 @@ import {
 } from "lucide-vue-next";
 
 const props = defineProps<SidebarProps>();
+const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const companyStore = useCompanyStore();
@@ -70,7 +71,7 @@ const userRole = computed(() => {
   return typeof role === "string"
     ? role.charAt(0).toUpperCase() + role.slice(1)
     : "User";
-});
+}); 
 
 const userInitials = computed(() => {
   const name = authStore.user?.name || "GU";
@@ -81,6 +82,11 @@ const userInitials = computed(() => {
     .toUpperCase()
     .slice(0, 2);
 });
+
+const isActiveRoute = (url: string) => {
+  const base = `/app/${companyStore.companyId}${url}`;
+  return route.path.startsWith(base);
+};
 
 const handleLogout = async () => {
   await authStore.logout();
@@ -214,7 +220,9 @@ const data: { navMain: NavMainItem[] } = {
                     <RouterLink
                       :to="`/app/${companyStore.companyId}${childItem.url}`"
                       class="block w-full px-4 py-2.5 text-sm text-slate-300 hover:text-white transition-colors rounded-lg"
-                      active-class="bg-[#1043b3] !text-white font-semibold"
+                      :class="{
+                        'bg-[#1043b3] !text-white font-semibold': isActiveRoute(childItem.url)
+                      }"
                     >
                       {{ childItem.title }}
                     </RouterLink>
