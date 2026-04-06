@@ -4,12 +4,14 @@ export interface ItemAccount {
   number: string | null
 }
 
+export type ItemType = 'product' | 'service'
+
 export interface Item { 
   id: number
   uuid: string
   sku: string
   name: string
-  type: 'service' | 'product'
+  type: ItemType
   description: string | null 
   
   is_sale?: boolean
@@ -48,7 +50,7 @@ export interface Item {
 export interface ItemFormData {
   sku: string
   name: string
-  type: string
+  type: ItemType
   description: string | null 
   
   // Usage flags (matching backend)
